@@ -205,16 +205,17 @@ flowchart LR
 - **목적**: 원문 XML 불변 보관(§P3). 감사 목적으로 lsId+lsiSeq 키로 접근 가능하게.
 - **선행 조건**: Task 1 (GCS 버킷은 Terraform 에 포함).
 - **작업 내용**:
-  - [ ] 먼저 작성할 테스트: Testcontainers GCS 에뮬레이터(fake-gcs-server) 이용한 `RawXmlStoreTest.kt`.
-  - [ ] 구현:
-    - [ ] `put(lsId, lsiSeq, xml): GcsUri` — 경로 `gs://laborcase-raw/law/{lsId}/{lsiSeq}.xml`, `Content-Type: application/xml`, 불변 객체(versioning 활성 버킷).
-    - [ ] `exists(lsId, lsiSeq): Boolean` — 중복 저장 방지.
-  - [ ] `infra/terraform/storage.tf` 에 `laborcase-raw` 버킷 + versioning + retention 365일.
+  - [x] 먼저 작성할 테스트: **LocalStorageHelper** 기반 `RawXmlStoreTest.kt` (Testcontainers 대신 Google 공식 in-memory Storage fake 사용. Docker·네트워크 불필요).
+  - [x] 구현:
+    - [x] `put(lsId, lsiSeq, xml): GcsUri` — 경로 `gs://laborcase-raw/law/{lsId}/{lsiSeq}.xml`, `Content-Type: application/xml`, **write-once 두 겹 보호** (exists pre-check + `doesNotExist` precondition).
+    - [x] `exists(lsId, lsiSeq): Boolean` — 중복 저장 방지.
+  - [x] `infra/terraform/storage.tf` — `laborcase-raw` 버킷 (STANDARD + uniform-BLA + versioning + lifecycle: non-current 365일 삭제). retention_policy 는 유연성 위해 생략.
 - **DoD**:
-  - [ ] 테스트 green.
-  - [ ] 실제 GCS 에 Task 0 fixture 1건 업로드 성공, `gsutil ls` 로 확인.
-- **검증 방법**: GCS 콘솔에서 객체 메타데이터 확인.
-- **예상 시간**: 2h
+  - [x] 테스트 5건 green.
+  - [x] 실제 GCS 에 Task 0 fixture 1건 업로드 성공 (`gs://laborcase-raw/law/001872/265959.xml`, 260 KiB, application/xml).
+- **검증 방법**: `gsutil stat` 로 객체 메타데이터 확인 완료.
+- **실제 소요**: 1.5h
+- **구현 노트**: [2026-04-24_task5-raw-xml-store](./2026-04-24_task5-raw-xml-store.md)
 
 ---
 
