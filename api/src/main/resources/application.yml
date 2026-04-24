@@ -5,6 +5,7 @@ spring:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/laborcase}
     username: ${DATABASE_USER:laborcase}
     password: ${DATABASE_PASSWORD:}
+    driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
       connection-timeout: 5000
@@ -35,6 +36,13 @@ management:
 server:
   port: ${PORT:8080}
   shutdown: graceful
+
+law:
+  oc: ${LAW_OC:}
+
+laborcase:
+  gcs:
+    raw-bucket: ${LABORCASE_GCS_RAW_BUCKET:laborcase-raw}
 
 logging:
   level:

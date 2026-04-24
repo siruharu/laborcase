@@ -76,9 +76,17 @@ class LawSyncRepository(private val jdbc: JdbcClient) {
 
     fun insertArticles(lawVersionId: UUID, articles: List<ParsedArticle>) {
         if (articles.isEmpty()) return
-        // JdbcClient lacks a convenient batch API on 6.2; fall back to individual
-        // inserts within the same transaction. For our volumes (≈150 rows/law)
-        // the round-trip cost is negligible.
+        // JdbcClient lacks a convenient batch API on 6.2; fall back to
+        // individual inserts within the same transaction. For our volumes
+        // (≈150 rows/law) the round-trip cost is negligible.
+        //
+        // ON CONFLICT DO NOTHING is defensive: some 법령 XMLs (e.g. 퇴직급여법,
+        // 남녀고용평등법) contain repeated (조, 항, 호, 목) entries that the
+        // parser legitimately emits — they are the same rule expressed in
+        // multiple sections. Letting the first row win keeps the sync
+        // idempotent and preserves the article shape we already test. When
+        // we encounter this in practice we log the skipped count so it's
+        // visible.
         for (a in articles) {
             jdbc.sql(
                 """
@@ -86,6 +94,7 @@ class LawSyncRepository(private val jdbc: JdbcClient) {
                     (law_version_id, jo, jo_branch, hang, ho, mok, title, body, effective_date)
                 VALUES
                     (:lawVersionId, :jo, :joBranch, :hang, :ho, :mok, :title, :body, :effectiveDate)
+                ON CONFLICT ON CONSTRAINT article_locator_uq DO NOTHING
                 """.trimIndent(),
             )
                 .param("lawVersionId", lawVersionId)

@@ -13,6 +13,15 @@ plugins {
 group = "kr.laborcase"
 version = "0.1.0-SNAPSHOT"
 
+springBoot {
+    // Allow overriding the main class via -Pspring.boot.main=... so the same
+    // JAR can be launched either as the API server (default) or as a sync
+    // job (SyncMain) from the Cloud Run Job container.
+    mainClass.set(
+        project.findProperty("spring.boot.main")?.toString() ?: "kr.laborcase.LaborcaseApiApplicationKt",
+    )
+}
+
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(21))

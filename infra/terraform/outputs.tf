@@ -48,3 +48,13 @@ output "raw_bucket" {
   description = "GCS bucket holding immutable copies of every fetched 법령 XML (gs://laborcase-raw)."
   value       = google_storage_bucket.raw.name
 }
+
+output "artifact_registry_repo" {
+  description = "Docker repository for laborcase images. Tag format: {region}-docker.pkg.dev/{project}/{repo}/api:{tag}."
+  value       = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.images.repository_id}"
+}
+
+output "image_uri" {
+  description = "Canonical image URI pinned by the Cloud Run Jobs."
+  value       = local.image_uri
+}

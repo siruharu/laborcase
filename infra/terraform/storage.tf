@@ -33,10 +33,17 @@ resource "google_storage_bucket" "raw" {
 
 # law-sync Cloud Run Job writes (but must not overwrite — controlled at app
 # layer via DoesNotExist precondition). objectCreator role lets it create
-# new blobs but not update existing ones.
+# new blobs but not update existing ones; objectViewer lets the idempotency
+# pre-check (`RawXmlStore.exists`) look up object generations.
 resource "google_storage_bucket_iam_member" "raw_sync_writer" {
   bucket = google_storage_bucket.raw.name
   role   = "roles/storage.objectCreator"
+  member = "serviceAccount:${google_service_account.law_sync.email}"
+}
+
+resource "google_storage_bucket_iam_member" "raw_sync_reader" {
+  bucket = google_storage_bucket.raw.name
+  role   = "roles/storage.objectViewer"
   member = "serviceAccount:${google_service_account.law_sync.email}"
 }
 
