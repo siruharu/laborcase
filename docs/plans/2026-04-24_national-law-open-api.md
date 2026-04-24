@@ -224,18 +224,20 @@ flowchart LR
 - **목적**: 6개 법령의 현행 버전을 모두 수집·파싱·저장·임베딩.
 - **선행 조건**: Task 2, 3, 4, 5.
 - **작업 내용**:
-  - [ ] 먼저 작성할 테스트: `FullSyncJobIntegrationTest.kt` — Testcontainers Postgres + WireMock DRF + fake GCS. 6개 법령 중 2개 fixture 로 시드하고 Job 실행 후 DB 상태 확인.
-  - [ ] 구현:
-    - [ ] `laborcase.law.seed.yaml` 에 6개 법령의 `{약칭, lsId}` 기재 (Task 0 결과).
-    - [ ] Job 흐름: 각 법령별 → (1) `fetchLawByLsId` → (2) `RawXmlStore.put` → (3) `LawXmlParser.parse` → (4) upsert `law_version`(is_current=true, 이전 버전 false) → (5) upsert articles → (6) 임베딩(Task 9 와 동시/후속, 플래그로 제어).
-    - [ ] 트랜잭션 경계: 법령 1건을 1 트랜잭션으로. 실패 시 롤백, `sync_log` 에 기록.
-    - [ ] 멱등성: 같은 `(lsId, lsiSeq)` 로 재실행 시 no-op.
-  - [ ] 리팩토링: 수집/저장/임베딩을 단계별 `Step` 클래스로 분리 가능하게.
+  - [x] 먼저 작성할 테스트: `FullSyncJobIntegrationTest.kt` — 로컬 Postgres(54320) + WireMock + LocalStorageHelper. 3 시나리오 (최초 import / 재실행 idempotent / 개정 시 is_current 승계).
+  - [x] 구현:
+    - [x] `laborcase.law.seed.yaml` 에 6개 법령의 `{shortName, lsId, searchQuery}`.
+    - [x] Job 흐름: per-law (1) `searchLaws` → 현행 hit 선택 → lsiSeq 획득 → (2) DB 에 이미 있으면 skip → (3) `fetchLawByLsId` → (4) `RawXmlStore.put` → (5) `LawXmlParser.parse` → (6) upsert law → demote is_current → insert law_version + articles.
+    - [x] 트랜잭션: 법령 1건 = 1 트랜잭션. per-law 실패가 다른 법령에 번지지 않음.
+    - [x] 멱등성: `(law_id, lsi_seq)` 로 검증.
+    - [~] 임베딩: Task 8 에서 연결 예정. 플래그 분기는 이후 추가.
+  - [~] 리팩토링 (Step 클래스 분리) — Task 7/8 합류 후 공통 패턴 보이면 추출. 현재는 1개 잡이라 overhead.
 - **DoD**:
-  - [ ] 통합 테스트 green.
-  - [ ] Cloud Run Job 으로 수동 실행 1회 성공, `select count(*) from article where law_version_id=...` 로 예상 조문 수 검증.
-- **검증 방법**: `gcloud run jobs execute law-full-sync --region=...`
-- **예상 시간**: 4h
+  - [x] 통합 테스트 3건 모두 green. 전체 스위트 33 tests PASSED.
+  - [~] Cloud Run Job 으로 수동 실행 1회 성공 — **Task 10 (배포) 로 이관**. 로컬은 법제처/Cloud SQL 둘 다 접근 불가.
+- **검증 방법**: `gcloud run jobs execute law-full-sync --region=...` (Task 10 이후).
+- **실제 소요**: 3h
+- **구현 노트**: [2026-04-24_task6-full-sync-job](./2026-04-24_task6-full-sync-job.md)
 
 ---
 
