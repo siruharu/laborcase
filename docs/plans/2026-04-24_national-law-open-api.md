@@ -184,18 +184,19 @@ flowchart LR
 - **목적**: 원문 XML → `Law`, `LawVersion`, `Article` 도메인 객체 변환. 중첩 구조(조→항→호→목) 정확히 평탄화.
 - **선행 조건**: Task 0 (fixture), Task 2 (도메인 클래스).
 - **작업 내용**:
-  - [ ] 먼저 작성할 테스트:
-    - [ ] `LawXmlParserTest.kt` — 근로기준법 fixture 를 파싱해 조항 수·특정 조문(제2조 정의, 제23조 해고 제한)의 본문이 예상과 일치하는지.
-    - [ ] 누락 필드(항 없음, 호 없음)에서 null 전파 확인.
-  - [ ] 구현:
-    - [ ] JAXB 또는 `XmlMapper`(Jackson) 선택 — 리팩토링 용이성 기준 Jackson.
-    - [ ] 조문 평탄화: `(조, null, null, null)`, `(조, 항, null, null)`, `(조, 항, 호, null)`, `(조, 항, 호, 목)` 까지 4-레벨 레코드로 전개.
-    - [ ] 조문 번호는 6자리 zero-pad 유지(영속 키 규칙 §R6).
+  - [x] 먼저 작성할 테스트:
+    - [x] `LawXmlParserTest.kt` — 근로기준법 fixture 11 tests green. 제2조/제23조 본문 assert + 항번호/호번호 파싱 단위 테스트 + 조문가지번호 검증 + (jo, 가지) 헤더 유일성.
+  - [x] 구현:
+    - [x] Jackson `XmlMapper` + `JsonNode` 선택 (tolerant + kotlin 친화).
+    - [x] 조문 평탄화: `(조, 가지, null, null, null)` ~ `(조, 가지, 항, 호, 목)`. **조문가지번호 (제N조의K)** 가 발견되어 plan 의 4-level 에 추가됨.
+    - [x] 조문 번호는 6자리 zero-pad 유지 + 새 `jo_branch smallint` 컬럼(V2 마이그레이션) 으로 가지번호 분리.
+    - [x] 추가 필터: `조문여부=전문` (편/장/절 헤더) 는 조문번호 중복 유발로 제외.
 - **DoD**:
-  - [ ] 근로기준법 fixture 에서 100+ 조문 파싱, 샘플링 5건 수동 검수와 일치.
-  - [ ] 파서 테스트 green.
+  - [x] 근로기준법 fixture 에서 143개 조문 행 파싱, 샘플 5건 (제2조 정의, 제23조 해고 등의 제한, 제43조의N) 수동 검수와 일치.
+  - [x] 파서 테스트 11건 모두 green.
 - **검증 방법**: 테스트 + 근로기준법 제23조 본문 스냅샷 매칭.
-- **예상 시간**: 3h
+- **실제 소요**: 2h
+- **구현 노트**: [2026-04-24_task4-law-xml-parser](./2026-04-24_task4-law-xml-parser.md)
 
 ---
 
