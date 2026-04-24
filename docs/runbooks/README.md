@@ -4,7 +4,7 @@
 
 - [secret-leak.md](./secret-leak.md) — 비밀(API 키·Deploy Key·서비스계정)이 노출·커밋된 경우
 - [deploy-key-rotation.md](./deploy-key-rotation.md) — Deploy Key 정기 로테이션
-- [law-sync-failure.md](./law-sync-failure.md) — 법제처 API 동기화 배치 실패 (API 구현 후 추가 예정)
+- [law-sync-failure.md](./law-sync-failure.md) — `law-full-sync` / `law-delta-sync` Cloud Run Job 실패 분류·조치
 
 ## 작성 규칙
 
