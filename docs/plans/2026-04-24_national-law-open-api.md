@@ -329,17 +329,18 @@ flowchart LR
 - **목적**: §R2 완화. 실패가 침묵하지 않도록.
 - **선행 조건**: Task 6, 7.
 - **작업 내용**:
-  - [ ] 먼저 작성할 테스트: 의도적 실패 주입 시 Sentry Mock 에 이벤트가 전송되는지.
-  - [ ] 구현:
-    - [ ] `sentry-spring-boot-starter` 추가, DSN 은 Secret Manager.
-    - [ ] Job 에서 예외 발생 시 Sentry 로그 + `sync_log.status='FAILED'` 기록.
-    - [ ] API 응답 메타에 `lastSyncedAt` 포함. 값이 48h 이상 오래되면 `stale: true`.
-  - [ ] 프론트(Phase 후속) 가 `stale: true` 일 때 배너 띄우도록 디자인 가이드 `docs/decisions/adr-0001-stale-data-banner.md`.
+  - [x] 먼저 작성할 테스트: SyncFreshnessService 5 시나리오 (dev-postgres). 실패 자체는 기존 FullSync 테스트가 커버.
+  - [x] 구현:
+    - [x] `sentry-spring-boot-starter-jakarta:7.18.0` + `sentry-logback`. Secret Manager `sentry-dsn` 생성 완료. 값은 Sentry 계정 발급 후 주입.
+    - [x] Job 예외 발생 시 `syncLog.failed()` 호출 + SLF4J `log.error` 가 Sentry Logback appender 로 전달 (스타터 자동 연동).
+    - [x] API 응답에 `freshness.lastSyncedAt` + `stale` + `staleThresholdHours` 포함. 기본 48h.
+  - [x] ADR-0002 `docs/decisions/adr-0002-stale-data-banner.md` — 배너 트리거·문구·dismiss 불가.
 - **DoD**:
-  - [ ] 강제 실패로 Sentry 이벤트 1건 수신.
-  - [ ] API 응답에 `lastSyncedAt` 필드 존재.
-- **검증 방법**: Sentry 대시보드 + curl.
-- **예상 시간**: 2h
+  - [~] 강제 실패로 Sentry 이벤트 1건 수신 — **DSN 발급 후 manual smoke** (현재는 인프라·코드만 준비).
+  - [x] API 응답에 `lastSyncedAt` 필드 존재 (3 엔드포인트 전부).
+- **검증 방법**: Sentry 대시보드 + curl (DSN 발급 후).
+- **실제 소요**: 1.5h
+- **구현 노트**: [2026-04-24_task11-observability](./2026-04-24_task11-observability.md)
 
 ---
 
