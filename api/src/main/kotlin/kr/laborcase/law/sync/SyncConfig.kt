@@ -8,7 +8,9 @@ import kr.laborcase.law.storage.GcsRawXmlStore
 import kr.laborcase.law.storage.RawXmlStore
 import kr.laborcase.law.web.LawReadRepository
 import kr.laborcase.law.web.SourceMetaFactory
+import kr.laborcase.law.web.SyncFreshnessService
 import kr.laborcase.law.xml.LawXmlParser
+import java.time.Duration
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -79,4 +81,13 @@ class SyncConfig {
 
     @Bean
     fun sourceMetaFactory(): SourceMetaFactory = SourceMetaFactory()
+
+    @Bean
+    fun syncFreshnessService(
+        jdbcClient: JdbcClient,
+        @Value("\${laborcase.freshness.stale-threshold-hours:48}") staleHours: Int,
+    ): SyncFreshnessService = SyncFreshnessService(
+        jdbcClient,
+        staleThreshold = Duration.ofHours(staleHours.toLong()),
+    )
 }

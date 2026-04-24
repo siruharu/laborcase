@@ -43,6 +43,19 @@ law:
 laborcase:
   gcs:
     raw-bucket: ${LABORCASE_GCS_RAW_BUCKET:laborcase-raw}
+  freshness:
+    stale-threshold-hours: ${LABORCASE_STALE_HOURS:48}
+
+sentry:
+  # Empty DSN → starter becomes a no-op (safe for dev + tests).
+  dsn: ${SENTRY_DSN:}
+  environment: ${SENTRY_ENV:dev}
+  release: ${SENTRY_RELEASE:0.1.0-SNAPSHOT}
+  # MVP: only capture ERRORs. Turn on tracing later when we have a perf budget.
+  traces-sample-rate: 0.0
+  logging:
+    minimum-event-level: ERROR
+    minimum-breadcrumb-level: INFO
 
 logging:
   level:

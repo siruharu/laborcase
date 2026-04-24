@@ -26,12 +26,24 @@ class LawControllerTest {
     @Autowired lateinit var objectMapper: ObjectMapper
 
     @MockBean lateinit var repo: LawReadRepository
+    @MockBean lateinit var freshness: SyncFreshnessService
 
     @TestConfiguration
     class Config {
         @Bean
         fun sourceMetaFactory(): SourceMetaFactory =
             SourceMetaFactory(clock = Clock.fixed(Instant.parse("2026-04-24T00:00:00Z"), ZoneOffset.UTC))
+    }
+
+    @org.junit.jupiter.api.BeforeEach
+    fun stubFreshness() {
+        whenever(freshness.current()).thenReturn(
+            Freshness(
+                lastSyncedAt = Instant.parse("2026-04-23T18:00:00Z"),
+                stale = false,
+                staleThresholdHours = 48,
+            ),
+        )
     }
 
     @Test
@@ -46,6 +58,9 @@ class LawControllerTest {
             .andExpect(jsonPath("$.source.license").value("KOGL-1"))
             .andExpect(jsonPath("$.source.provider").value("법제처 국가법령정보센터"))
             .andExpect(jsonPath("$.source.url").value("https://www.law.go.kr"))
+            .andExpect(jsonPath("$.freshness.lastSyncedAt").value("2026-04-23T18:00:00Z"))
+            .andExpect(jsonPath("$.freshness.stale").value(false))
+            .andExpect(jsonPath("$.freshness.staleThresholdHours").value(48))
             .andExpect(jsonPath("$.disclaimer").value(ApiResponse.LEGAL_DISCLAIMER))
     }
 

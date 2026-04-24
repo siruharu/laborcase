@@ -16,6 +16,7 @@ import java.time.Instant
 data class ApiResponse<T>(
     val data: T,
     val source: SourceMeta,
+    val freshness: Freshness? = null,
     val disclaimer: String = LEGAL_DISCLAIMER,
 ) {
     companion object {

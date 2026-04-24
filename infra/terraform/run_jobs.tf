@@ -43,7 +43,36 @@ locals {
     DATABASE_USER             = google_sql_user.laborcase_app.name
     LABORCASE_GCS_RAW_BUCKET  = google_storage_bucket.raw.name
     SPRING_FLYWAY_ENABLED     = "false"
+    SENTRY_ENV                = "prod"
   }
+}
+
+# Sentry DSN — optional. Empty secret means the starter is a no-op and the
+# jobs simply log to stderr. Seed the secret manually once you have a DSN:
+#   echo "https://...@sentry.io/..." | gcloud secrets versions add sentry-dsn --data-file=-
+resource "google_secret_manager_secret" "sentry_dsn" {
+  secret_id = "sentry-dsn"
+  labels    = local.labels
+
+  replication {
+    user_managed {
+      replicas {
+        location = var.region
+      }
+    }
+  }
+}
+
+resource "google_secret_manager_secret_iam_member" "sentry_dsn_sync_accessor" {
+  secret_id = google_secret_manager_secret.sentry_dsn.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.law_sync.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "sentry_dsn_api_accessor" {
+  secret_id = google_secret_manager_secret.sentry_dsn.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.api.email}"
 }
 
 resource "google_cloud_run_v2_job" "law_full_sync" {

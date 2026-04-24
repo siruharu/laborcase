@@ -52,6 +52,12 @@ dependencies {
     implementation(platform("com.google.cloud:libraries-bom:26.49.0"))
     implementation("com.google.cloud:google-cloud-storage")
 
+    // Sentry Spring Boot 3 starter. If SENTRY_DSN env is empty the starter
+    // is a no-op; this keeps dev + test running without a DSN while prod
+    // Cloud Run gets the DSN from Secret Manager.
+    implementation("io.sentry:sentry-spring-boot-starter-jakarta:7.18.0")
+    implementation("io.sentry:sentry-logback:7.18.0")
+
     implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-database-postgresql")
     runtimeOnly("org.postgresql:postgresql")

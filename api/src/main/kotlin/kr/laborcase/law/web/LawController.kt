@@ -22,13 +22,18 @@ import org.springframework.http.HttpStatus
 class LawController(
     private val repo: LawReadRepository,
     private val sourceMeta: SourceMetaFactory,
+    private val freshness: SyncFreshnessService,
 ) {
 
     @GetMapping
     fun list(): ResponseEntity<ApiResponse<List<LawSummary>>> {
         val laws = repo.listLaws()
         return ResponseEntity.ok(
-            ApiResponse(data = laws, source = sourceMeta.forLawList()),
+            ApiResponse(
+                data = laws,
+                source = sourceMeta.forLawList(),
+                freshness = freshness.current(),
+            ),
         )
     }
 
@@ -59,6 +64,7 @@ class LawController(
             ApiResponse(
                 data = ArticleListResponse(law = law, articles = articles),
                 source = sourceMeta.forLawVersion(law.lsiSeq),
+                freshness = freshness.current(),
             ),
         )
     }
