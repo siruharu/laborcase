@@ -246,17 +246,18 @@ flowchart LR
 - **목적**: §P5 결정. 일 1회 + 시행 임박 시 시간 1회.
 - **선행 조건**: Task 6.
 - **작업 내용**:
-  - [ ] 먼저 작성할 테스트: `DeltaSyncJobTest.kt` — lsHistory 응답에 새 `lsiSeq` 가 있으면 해당 법령만 재수집되는지, 변경 없으면 no-op 인지.
-  - [ ] 구현:
-    - [ ] 각 법령의 최근 `lsHistory` 조회 → 응답 최상단 `lsiSeq` 와 DB `is_current=true` 버전의 `lsi_seq` 비교.
-    - [ ] 다르면 Task 6 의 수집 단계 재사용하여 새 버전 추가 및 이전 버전 `is_current=false`.
-    - [ ] 응답의 다음 시행일이 `today+7d` 이내인 법령 목록을 `upcoming_laws` 테이블(또는 설정)로 마킹.
-  - [ ] 스케줄러(Task 10)에서 이 마킹을 읽어 주기 조정.
+  - [x] 먼저 작성할 테스트: `DeltaSyncJobIntegrationTest.kt` — no-op + 새 lsiSeq drift 감지 2건.
+  - [x] 구현:
+    - [x] lsHistory 대신 **target=law 재검색** 방식 사용 (Task 0 권한 누락 discovery). FullSyncJob.run() 에 jobName 파라미터 추가.
+    - [x] DeltaSyncJob = 6줄짜리 delegation 래퍼. `sync_log.job_name = "delta-sync"` 로 구분.
+    - [~] upcoming_laws 마킹 **이관** — lawSearch 응답에 미래 시행일 엔트리가 나오지 않는 것으로 보여 별도 리서치 필요. Task 10 후속 이슈.
+  - [~] 스케줄러 연동 — Task 10 범위.
 - **DoD**:
-  - [ ] 테스트 green (변경 있음/없음 2 시나리오).
-  - [ ] 수동 실행으로 DB 내 현행 버전이 변하지 않음(현 시점 개정 없음 가정) 확인.
+  - [x] 테스트 2건 green + 전체 suite 36 PASSED.
+  - [~] 수동 실행 확인 — Cloud Run Job 배포 후 (Task 10).
 - **검증 방법**: `select lsi_seq, is_current, fetched_at from law_version;`
-- **예상 시간**: 3h
+- **실제 소요**: 45분 (대부분 FullSyncJob 에 이미 구현되어 있음)
+- **구현 노트**: [2026-04-24_task7-delta-sync-job](./2026-04-24_task7-delta-sync-job.md)
 
 ---
 
