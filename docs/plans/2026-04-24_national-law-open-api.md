@@ -286,23 +286,20 @@ flowchart LR
 - **목적**: 외부 소비자(프론트/AI 서버) 가 쓸 REST 엔드포인트. 응답에 출처 메타 포함(§P7).
 - **선행 조건**: Task 4, 6.
 - **작업 내용**:
-  - [ ] 먼저 작성할 테스트: `LawControllerTest.kt` — MockMvc, Given/When/Then.
-    - [ ] 존재하는 법령/조문 조회 200 + 예상 필드.
-    - [ ] 없는 조문 조회 404.
-    - [ ] 응답에 `source.license="KOGL-1"`, `source.url` 포함 검증.
-  - [ ] 구현:
-    - [ ] `GET /api/v1/laws` — 법령 목록 (약칭·공식명·현 `lsiSeq`).
-    - [ ] `GET /api/v1/laws/{lawShortName}/articles?jo=23&hang=1` — 조문 단일 조회.
-    - [ ] `GET /api/v1/laws/{lawShortName}/articles` — 법령 내 전체 조문.
-    - [ ] 응답 래퍼 `ApiResponse<T>(data: T, source: SourceMeta)` — 전체 컨트롤러에 적용.
-    - [ ] `SourceMeta(license="KOGL-1", provider="법제처 국가법령정보센터", url="https://www.law.go.kr/lsInfoP.do?lsiSeq=...", retrievedAt=...)`.
-    - [ ] `disclaimer` 필드도 응답 최상단에 포함 (CLAUDE.md §62 문구 고정).
-  - [ ] 리팩토링: `SourceMeta` 생성 로직을 `SourceMetaFactory` 로.
+  - [x] 먼저 작성할 테스트: MockMvc 4건 + dev-postgres 5건 = 9 tests.
+  - [x] 구현:
+    - [x] `GET /api/v1/laws` — 법령 목록.
+    - [x] `GET /api/v1/laws/{key}/articles?jo=&hang=&ho=` — jo/hang/ho 필터.
+    - [x] `ApiResponse<T>{ data, source, disclaimer }` wrapper.
+    - [x] `SourceMeta{ provider, license=KOGL-1, url, retrievedAt }`.
+    - [x] `disclaimer` = CLAUDE.md §법적 경계 문구 고정.
+  - [x] 리팩토링: `SourceMetaFactory` 로 OC 제거 + URL 생성 집중화.
 - **DoD**:
-  - [ ] MockMvc 테스트 3건 green.
-  - [ ] 로컬에서 `curl localhost:8080/api/v1/laws/근로기준법/articles?jo=23` 응답 스키마가 예상과 일치.
-- **검증 방법**: `./gradlew :api:bootRun` + curl.
-- **예상 시간**: 3h
+  - [x] MockMvc 4 tests green + Repo 5 tests green = 9 신규.
+  - [~] 로컬 `curl` 검증 — API Cloud Run Service 배포 후 (Task 12 이후 follow-up).
+- **검증 방법**: `./gradlew :api:bootRun` + curl (deferred).
+- **실제 소요**: 1.5h
+- **구현 노트**: [2026-04-24_task9-law-controller](./2026-04-24_task9-law-controller.md)
 
 ---
 
