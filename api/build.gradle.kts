@@ -39,6 +39,9 @@ dependencies {
     implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
 
+    implementation(platform("com.google.cloud:libraries-bom:26.49.0"))
+    implementation("com.google.cloud:google-cloud-storage")
+
     implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-database-postgresql")
     runtimeOnly("org.postgresql:postgresql")
@@ -49,6 +52,7 @@ dependencies {
     // placeholder). Tests drive Postgres via scripts/dev-postgres.sh instead.
     // Track: docs/research/drf-schema-notes.md for follow-up.
     testImplementation("org.wiremock:wiremock-standalone:3.10.0")
+    testImplementation("com.google.cloud:google-cloud-nio")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

@@ -43,3 +43,8 @@ output "db_app_password_secret_id" {
   description = "Secret Manager secret holding the laborcase_app DB password. Rotated via Terraform."
   value       = google_secret_manager_secret.db_app_password.secret_id
 }
+
+output "raw_bucket" {
+  description = "GCS bucket holding immutable copies of every fetched 법령 XML (gs://laborcase-raw)."
+  value       = google_storage_bucket.raw.name
+}
