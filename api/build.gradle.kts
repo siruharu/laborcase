@@ -63,6 +63,7 @@ dependencies {
     // Track: docs/research/drf-schema-notes.md for follow-up.
     testImplementation("org.wiremock:wiremock-standalone:3.10.0")
     testImplementation("com.google.cloud:google-cloud-nio")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:5.4.0")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

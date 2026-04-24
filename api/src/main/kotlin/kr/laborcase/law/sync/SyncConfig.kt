@@ -6,6 +6,8 @@ import kr.laborcase.law.client.LawOpenApiClient
 import kr.laborcase.law.client.LawOpenApiUrlBuilder
 import kr.laborcase.law.storage.GcsRawXmlStore
 import kr.laborcase.law.storage.RawXmlStore
+import kr.laborcase.law.web.LawReadRepository
+import kr.laborcase.law.web.SourceMetaFactory
 import kr.laborcase.law.xml.LawXmlParser
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -71,4 +73,10 @@ class SyncConfig {
 
     @Bean
     fun deltaSyncJob(fullSyncJob: FullSyncJob): DeltaSyncJob = DeltaSyncJob(fullSyncJob)
+
+    @Bean
+    fun lawReadRepository(jdbcClient: JdbcClient): LawReadRepository = LawReadRepository(jdbcClient)
+
+    @Bean
+    fun sourceMetaFactory(): SourceMetaFactory = SourceMetaFactory()
 }
