@@ -28,7 +28,7 @@ pipeline/**/raw/
 # Terraform
 # ─────────────────────────────────────────────────────────────
 **/.terraform/
-**/.terraform.lock.hcl
+# NOTE: .terraform.lock.hcl is intentionally tracked so providers pin across machines + CI.
 *.tfstate
 *.tfstate.*
 *.tfvars
