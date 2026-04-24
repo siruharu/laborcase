@@ -7,6 +7,7 @@ plugins {
     kotlin("plugin.jpa") version kotlinVersion
     id("org.springframework.boot") version "3.4.1"
     id("io.spring.dependency-management") version "1.1.7"
+    id("org.flywaydb.flyway") version "11.1.1"
 }
 
 group = "kr.laborcase"
@@ -56,5 +57,22 @@ tasks.withType<Test> {
     testLogging {
         events("passed", "skipped", "failed")
         showStandardStreams = false
+    }
+}
+
+// Flyway plugin config — parameters come from env vars so no secrets live in
+// build scripts or gradle.properties. Typical invocation:
+//   DATABASE_URL=... DATABASE_USER=... DATABASE_PASSWORD=... \
+//     ./gradlew flywayMigrate
+flyway {
+    url = System.getenv("DATABASE_URL") ?: ""
+    user = System.getenv("DATABASE_USER") ?: ""
+    password = System.getenv("DATABASE_PASSWORD") ?: ""
+    locations = arrayOf("classpath:db/migration")
+}
+
+buildscript {
+    dependencies {
+        classpath("org.flywaydb:flyway-database-postgresql:11.1.1")
     }
 }

@@ -27,3 +27,19 @@ output "law_oc_secret_id" {
   description = "Secret Manager secret holding the 법제처 OC. Value must be seeded via `gcloud secrets versions add law-oc --data-file=-`."
   value       = google_secret_manager_secret.law_oc.secret_id
 }
+
+output "cloudsql_instance_connection_name" {
+  description = "Cloud SQL instance connection name (project:region:instance) used by the Cloud SQL JDBC socket factory."
+  value       = google_sql_database_instance.laborcase.connection_name
+}
+
+output "cloudsql_private_ip" {
+  description = "Private IP of the Cloud SQL instance, reachable from inside the laborcase VPC."
+  value       = google_sql_database_instance.laborcase.private_ip_address
+  sensitive   = true
+}
+
+output "db_app_password_secret_id" {
+  description = "Secret Manager secret holding the laborcase_app DB password. Rotated via Terraform."
+  value       = google_secret_manager_secret.db_app_password.secret_id
+}
