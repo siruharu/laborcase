@@ -1,0 +1,23 @@
+# 6 노동 관련 법령의 영속 식별자(lsId) + 검색 쿼리.
+# lsId 는 Task 0 PoC 에서 실제 DRF 응답으로 확정. 검색 쿼리는 법령 정식 명칭
+# (법제처 검색이 관용어인 약칭보다 정식 명칭에 더 관대하게 매칭).
+# 매핑 근거: docs/research/labor-law-identifiers.md
+laws:
+  - shortName: "근기법"
+    lsId: "001872"
+    searchQuery: "근로기준법"
+  - shortName: "최임법"
+    lsId: "000129"
+    searchQuery: "최저임금법"
+  - shortName: "퇴직급여법"
+    lsId: "009883"
+    searchQuery: "근로자퇴직급여 보장법"
+  - shortName: "남녀고용평등법"
+    lsId: "000130"
+    searchQuery: "남녀고용평등과 일ㆍ가정 양립 지원에 관한 법률"
+  - shortName: "기간제법"
+    lsId: "010356"
+    searchQuery: "기간제 및 단시간근로자 보호 등에 관한 법률"
+  - shortName: "파견법"
+    lsId: "000122"
+    searchQuery: "파견근로자 보호 등에 관한 법률"
