@@ -349,14 +349,15 @@ flowchart LR
 - **목적**: §P7 의 3번째 앵커(README/footer) + 공공누리 준수 문서화.
 - **선행 조건**: Task 9 (API 응답 메타 완성).
 - **작업 내용**:
-  - [ ] `README.md` 상단에 공공누리 1유형 배지·문구 추가.
-  - [ ] `docs/legal/source-attribution.md` 신규: 기관명·연도·하이퍼링크 예시, "특수관계 오인 금지" 조항 인용.
-  - [ ] `docs/runbooks/law-sync-failure.md` 신규: 배치 실패 시 수동 재실행, 법제처 IP 등록 상태 확인, Sentry 링크 연결 절차.
-  - [ ] Frontend 렌더링 가이드는 분석 §P7 1·2번(조문 상세 상단, footer)은 프론트 태스크라 별도 플랜(`2026-04-??_frontend-law-view.md`)에서 다룬다고 크로스 링크.
+  - [x] `README.md` — 공공누리 배지 + 디스클레이머 (레포분리 Task 선구현).
+  - [x] `docs/legal/source-attribution.md` — freshness 반영 + 프론트 지침 4항목 + ADR-0002 링크.
+  - [x] `docs/runbooks/law-sync-failure.md` — Task 10 실장애 기반 6 섹션 (DRF 인증/GCS 권한/GCS↔DB 비일관성/중복 locator/Cloud SQL/일반 재시도).
+  - [x] 프론트 플랜 크로스링크.
 - **DoD**:
-  - [ ] 3개 문서 작성 완료, README 빌드 시 깨지지 않음.
+  - [x] 3개 문서 정합성 + pre-commit 통과.
 - **검증 방법**: PR 프리뷰에서 렌더링 확인.
-- **예상 시간**: 1.5h
+- **실제 소요**: 45분
+- **구현 노트**: [2026-04-24_task12-runbook-attribution](./2026-04-24_task12-runbook-attribution.md)
 
 ---
 
