@@ -19,7 +19,8 @@ import org.springframework.transaction.support.TransactionTemplate
  *
  * Idempotency: if the DB already has a law_version row with the same
  * (law, lsiSeq), the job skips the whole pipeline for that law. This lets
- * us re-run the job safely after a partial outage.
+ * us re-run the job safely after a partial outage — and lets DeltaSyncJob
+ * reuse the same implementation for the "expected no-op" case.
  */
 class FullSyncJob(
     private val client: LawOpenApiClient,
@@ -39,8 +40,13 @@ class FullSyncJob(
         val lawsFailed: Int,
     )
 
-    fun run(): Result {
-        val logId = syncLog.start(JOB_NAME)
+    /**
+     * Runs the full seed walk. Accepts a [jobName] so DeltaSyncJob can reuse
+     * the implementation while distinguishing itself in sync_log. Defaults to
+     * [JOB_NAME] = "full-sync".
+     */
+    fun run(jobName: String = JOB_NAME): Result {
+        val logId = syncLog.start(jobName)
         var changed = 0
         var skipped = 0
         var failed = 0
@@ -52,7 +58,7 @@ class FullSyncJob(
                     LawOutcome.SKIPPED_IDEMPOTENT -> skipped++
                     LawOutcome.FAILED -> failed++
                 }
-                log.info("law {} (lsId={}) → {}", entry.shortName, entry.lsId, outcome)
+                log.info("[{}] law {} (lsId={}) → {}", jobName, entry.shortName, entry.lsId, outcome)
             }
             syncLog.success(logId, changed)
         } catch (e: Throwable) {
