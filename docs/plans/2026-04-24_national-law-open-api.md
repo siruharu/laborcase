@@ -139,19 +139,20 @@ flowchart LR
 - **목적**: §P3 결정대로 법령·버전·조문 3-테이블 구조 + 임베딩 테이블.
 - **선행 조건**: Task 0 (lsId 확정), Task 1 (Cloud SQL 존재).
 - **작업 내용**:
-  - [ ] 먼저 작성할 테스트: `LawSchemaMigrationTest.kt` — Testcontainers(postgres:16 + pgvector 이미지)로 마이그레이션 후 모든 테이블/인덱스 존재 확인.
-  - [ ] 구현 (`V1__law_schema.sql`):
-    - [ ] `law(id uuid pk, ls_id varchar unique, name_kr text, short_name text, created_at)`
-    - [ ] `law_version(id uuid pk, law_id fk, lsi_seq varchar, promulgation_date date, effective_date date, promulgation_no text, is_current boolean, raw_xml_gcs_uri text, fetched_at timestamptz, unique(law_id, lsi_seq))`
-    - [ ] `article(id uuid pk, law_version_id fk, jo char(6), hang char(6) null, ho char(6) null, mok varchar(4) null, title text, body text, effective_date date null, unique(law_version_id, jo, hang, ho, mok))`
-    - [ ] `article_embedding(article_id uuid pk fk, vector vector(1536), embedded_at timestamptz)` + ivfflat 인덱스.
-    - [ ] `sync_log(id uuid pk, job_name text, started_at, finished_at, status, error_message, versions_changed int)`
-  - [ ] `CREATE EXTENSION IF NOT EXISTS vector;` 을 V0 로 분리.
+  - [~] 먼저 작성할 테스트: `LawSchemaMigrationTest.kt` — **Testcontainers 대신 `scripts/dev-postgres.sh` 컨테이너** 사용(Docker 29 호환성 이슈). 마이그레이션 후 테이블/인덱스/확장 확인 + NULL 포함 조문 locator 중복 거부.
+  - [x] 구현 (`V1__law_schema.sql`):
+    - [x] `law(id uuid pk, ls_id varchar unique, name_kr text, short_name text, created_at)`
+    - [x] `law_version(id uuid pk, law_id fk, lsi_seq varchar, promulgation_date date, effective_date date, promulgation_no text, is_current boolean, raw_xml_gcs_uri text, fetched_at timestamptz, unique(law_id, lsi_seq))`
+    - [x] `article(id uuid pk, law_version_id fk, jo char(6), hang char(6) null, ho char(6) null, mok varchar(4) null, title text, body text, effective_date date null, unique NULLS NOT DISTINCT (law_version_id, jo, hang, ho, mok))`
+    - [x] `article_embedding(article_id uuid pk fk, vector vector(1536), model text, embedded_at timestamptz)` + ivfflat(vector_cosine_ops) 인덱스.
+    - [x] `sync_log(id uuid pk, job_name text, started_at, finished_at, status, error_message, versions_changed int)`
+  - [x] `CREATE EXTENSION IF NOT EXISTS vector;` 을 V0 로 분리.
 - **DoD**:
-  - [ ] Testcontainers 테스트 green.
-  - [ ] Cloud SQL 에 마이그레이션 적용 성공, `\d law_version` 결과가 예상과 일치.
+  - [x] 로컬 테스트 2건 모두 green.
+  - [x] Cloud SQL 에 마이그레이션 적용 성공. 6 테이블 + pgvector 0.8.1 + flyway_schema_history 에 V0, V1 기록.
 - **검증 방법**: `psql` 로 테이블 목록·제약 확인.
-- **예상 시간**: 3h
+- **실제 소요**: 2.5h (Testcontainers/Docker 호환성 + Enterprise 에디션 이슈 포함).
+- **구현 노트**: [2026-04-24_task2-db-schema](./2026-04-24_task2-db-schema.md)
 
 ---
 
