@@ -311,16 +311,19 @@ flowchart LR
 - **목적**: §P5 "일 1회 + 임박 시 시간 1회" 자동화.
 - **선행 조건**: Task 7.
 - **작업 내용**:
-  - [ ] 먼저 작성할 테스트: `upcoming_laws` 가 비면 hourly cron 이 no-op, 채워지면 실행되는 게이트 로직 테스트.
-  - [ ] 구현 (`infra/terraform/scheduler.tf`):
-    - [ ] `law-full-sync` — cron `0 3 * * *` Asia/Seoul, Cloud Run Job 호출.
-    - [ ] `law-delta-sync` — cron `0 * * * *` Asia/Seoul.
-    - [ ] delta job 진입 시 `upcoming_laws` 비어있으면 조기 종료 (쿼터 보호).
+  - [~] `upcoming_laws` 게이트 로직은 **후속**으로 이관 (Task 7 에서 deferred).
+  - [x] 구현 (`infra/terraform/run_jobs.tf`):
+    - [~] `law-full-sync` Cloud Run Job 생성 (unscheduled — initial load 전용으로 재분류).
+    - [x] `law-delta-sync` Cloud Run Job 생성 + Cloud Scheduler `law-delta-sync-daily` cron `0 3 * * *` Asia/Seoul.
+    - [x] Artifact Registry `laborcase-images` + 이미지 빌드·푸시.
+    - [x] VPC 부착 + NAT egress + Secret Manager 연결.
 - **DoD**:
-  - [ ] Terraform apply 성공, Scheduler UI 에 2개 표시.
-  - [ ] 수동 트리거 2종 모두 성공 로그.
-- **검증 방법**: Cloud Logging 에서 Job 실행 로그 확인.
-- **예상 시간**: 2h
+  - [x] Terraform apply 성공 (9 신규 리소스: AR repo + 2 Jobs + IAM + Scheduler + SA).
+  - [x] **Full sync 수동 트리거 성공** — 6개 법령 전부 import, 총 1,572 조문 적재.
+  - [x] **Delta sync 수동 트리거 성공** — `versionsChanged=0, lawsSkippedIdempotent=6, lawsFailed=0` (의도된 no-op).
+- **검증 방법**: Cloud Logging 에서 Job 로그 확인 + `SELECT COUNT(*) FROM article` = 1,572.
+- **실제 소요**: 3h (플랜 2h 초과 — 권한 드리프트 + GCS 오핀 객체 이슈 + 중복 locator 디버깅으로 +1h)
+- **구현 노트**: [2026-04-24_task10-cloud-run-scheduler](./2026-04-24_task10-cloud-run-scheduler.md)
 
 ---
 
