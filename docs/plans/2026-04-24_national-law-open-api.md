@@ -266,18 +266,20 @@ flowchart LR
 - **목적**: `article.body` 를 벡터화해 `article_embedding` 적재. RAG/판례 매칭의 기반.
 - **선행 조건**: Task 4 (article 데이터 존재).
 - **작업 내용**:
-  - [ ] 먼저 작성할 테스트: 임베딩 프로바이더를 mock 으로 대체하고 `embedPending()` 이 미임베딩 조문만 처리하는지.
-  - [ ] 구현:
-    - [ ] 프로바이더 인터페이스 `EmbeddingProvider`. OpenAI `text-embedding-3-small` (1536 dim) 또는 Upstage — 환경변수 전환.
-    - [ ] 텍스트 구성: `"{법령명} {조문번호} {조문제목}\n\n{body}"` 로 contextual 임베딩.
-    - [ ] 배치 크기 20, 실패 시 재시도 3회.
-    - [ ] 일일 비용 상한 환경변수 `EMBEDDING_DAILY_LIMIT_USD`.
-  - [ ] FullSyncJob 과 DeltaSyncJob 에서 각각 호출.
+  - [x] 먼저 작성할 테스트: WireMock 4 + dev-postgres 통합 3. 미임베딩 row 만 처리, 중복 방지, 코사인 연산자 동작.
+  - [x] 구현:
+    - [x] **Upstage solar-embedding-1-large-{passage,query}** 듀얼 모델 (ADR-0003). OpenAI 는 기각.
+    - [x] 텍스트: `"{법령약칭} 제N조(제목)\n{body}"` contextual prefix.
+    - [x] 배치 크기 20, 재시도 3회 (429/5xx).
+    - [~] 일일 비용 상한 `EMBEDDING_DAILY_LIMIT_USD` — **follow-up** (현재는 token counting 만 로깅).
+  - [x] V3 마이그레이션 (vector 1536 → 4096).
+  - [~] FullSync/Delta 훅 — **follow-up** (Upstage API key 발급 후).
 - **DoD**:
-  - [ ] 테스트 green.
-  - [ ] 실제 OpenAI 호출 1회로 근기법 제23조 임베딩 저장, `select count(*) from article_embedding` > 0.
-- **검증 방법**: pgvector `<->` 연산자로 "해고" 쿼리 근접 조문 3건이 의미적으로 맞는지 수동 확인.
-- **예상 시간**: 3h
+  - [x] 테스트 7 tests green. 전체 suite 56 PASSED.
+  - [~] 실제 호출 smoke — **API key 발급 후** (follow-up).
+- **검증 방법**: pgvector `<=>` 연산자로 근접 조문 3건 테스트 확인.
+- **실제 소요**: 2h
+- **구현 노트**: [2026-04-24_task8-upstage-embedding](./2026-04-24_task8-upstage-embedding.md)
 
 ---
 
