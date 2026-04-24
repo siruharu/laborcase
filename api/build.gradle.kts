@@ -36,6 +36,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-xml")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
 
     implementation("org.flywaydb:flyway-core")
@@ -46,14 +47,21 @@ dependencies {
     // Testcontainers is not used yet because docker-java 3.4 cannot negotiate
     // with Docker Desktop 29 (the /info endpoint returns a Status 400
     // placeholder). Tests drive Postgres via scripts/dev-postgres.sh instead.
-    // Track: docs/research/docker-testcontainers-29.md
+    // Track: docs/research/drf-schema-notes.md for follow-up.
+    testImplementation("org.wiremock:wiremock-standalone:3.10.0")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 tasks.withType<Test> {
-    useJUnitPlatform()
+    // Live tests hit the real 법제처 DRF endpoint and require OC_LAW.
+    // Excluded from the default run so CI stays offline-safe.
+    useJUnitPlatform {
+        if (System.getenv("RUN_LIVE_TESTS") != "true") {
+            excludeTags("live")
+        }
+    }
     testLogging {
         events("passed", "skipped", "failed")
         showStandardStreams = false
