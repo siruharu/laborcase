@@ -1,0 +1,11 @@
+# Default owner for everything
+*                      @siruharu
+
+# Sensitive / high-risk paths require explicit review
+/ai/                   @siruharu
+/infra/                @siruharu
+/docs/legal/           @siruharu
+/docs/runbooks/        @siruharu
+/.github/workflows/    @siruharu
+/CODEOWNERS            @siruharu
+/CLAUDE.md             @siruharu
