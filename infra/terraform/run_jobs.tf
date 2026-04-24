@@ -75,6 +75,35 @@ resource "google_secret_manager_secret_iam_member" "sentry_dsn_api_accessor" {
   member    = "serviceAccount:${google_service_account.api.email}"
 }
 
+# Upstage API key for solar-embedding-1-large-{passage,query}. Same pattern
+# as law-oc: the secret resource lives in Terraform, the value is seeded
+# via `gcloud secrets versions add upstage-api-key --data-file=-` so it
+# never hits state.
+resource "google_secret_manager_secret" "upstage_api_key" {
+  secret_id = "upstage-api-key"
+  labels    = local.labels
+
+  replication {
+    user_managed {
+      replicas {
+        location = var.region
+      }
+    }
+  }
+}
+
+resource "google_secret_manager_secret_iam_member" "upstage_sync_accessor" {
+  secret_id = google_secret_manager_secret.upstage_api_key.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.law_sync.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "upstage_api_accessor" {
+  secret_id = google_secret_manager_secret.upstage_api_key.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.api.email}"
+}
+
 resource "google_cloud_run_v2_job" "law_full_sync" {
   name     = "law-full-sync"
   location = var.region
