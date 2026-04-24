@@ -1,0 +1,8 @@
+* text=auto eol=lf
+*.sh text eol=lf
+*.bat text eol=crlf
+*.{png,jpg,jpeg,gif,ico,pdf} binary
+
+# Mark generated / vendor paths for GitHub Linguist
+ai/prompts.example/** linguist-documentation
+docs/** linguist-documentation

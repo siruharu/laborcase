@@ -1,0 +1,12 @@
+# gitleaks configuration
+# Extends the built-in default ruleset and allowlists paths that intentionally
+# contain fixture data (regression tests for the pre-commit hook itself).
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Intentional fixture files for regression-testing secret scanners"
+paths = [
+  '''scripts/test-pre-commit-regression\.sh''',
+]
