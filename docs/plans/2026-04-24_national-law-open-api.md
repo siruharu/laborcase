@@ -97,18 +97,19 @@ flowchart LR
 - **목적**: 리서치 §R8 및 분석 §검증 필요 1·2 해소. 실제 응답이 문서와 일치하는지 확인하고, 이후 모든 파서·계약 테스트의 기준이 될 fixture XML 을 레포에 박제.
 - **선행 조건**: OC 발급 완료, Cloud NAT 고정 IP 등록 완료.
 - **작업 내용**:
-  - [ ] OC 를 로컬에 임시 환경변수로 주입, 고정 IP 가 있는 VM(또는 로컬 + IP 임시 등록)에서 호출.
-  - [ ] `lawSearch.do?target=law&query=근로기준법` 응답 저장 → `api/src/test/resources/fixtures/drf/lawSearch_근로기준법.xml`
-  - [ ] `lawService.do?target=law&ID={확정된 lsId}` 응답 저장 → `lawService_근로기준법.xml`
-  - [ ] `lawService.do?target=lawjosub&ID=...&JO=000230` (제23조, 부당해고) 응답 저장
-  - [ ] `lawSearch.do?target=lsHistory&query=근로기준법` 응답 저장
-  - [ ] 6개 법령의 `lsId` 를 표로 정리 → `docs/research/labor-law-identifiers.md` 에 커밋
+  - [x] OC 를 로컬에 임시 환경변수로 주입, 고정 IP 가 있는 VM(또는 로컬 + IP 임시 등록)에서 호출. (IP 등록 없이도 로컬 IP 에서 통과됨, 도메인 "없음" 신청 덕분)
+  - [x] `lawSearch.do?target=law&query=근로기준법` 응답 저장 → `docs/research/drf-fixtures/lawSearch_근로기준법.xml` (api/ 모듈 생성 전까지 임시 경로)
+  - [x] `lawService.do?target=law&ID={확정된 lsId}` 응답 저장
+  - [x] `lawService.do?target=lawjosub&ID=...&JO=002300` (제23조, 부당해고) 응답 저장 — JO 포맷 정정(리서치 "6자리 zero-pad" → 실제 "n*100 zero-pad")
+  - [~] `lawSearch.do?target=lsHistory&query=근로기준법` 응답 저장 — **권한 누락으로 실패**, 재검색 방식으로 대체(구현 노트 참조)
+  - [x] 6개 법령의 `lsId` 를 표로 정리 → `docs/research/labor-law-identifiers.md` 에 커밋
 - **DoD**:
-  - [ ] 6개 법령 각각의 `lsId` 확정 (리서치에서 비어있던 항목 포함).
-  - [ ] 4개 엔드포인트 fixture XML 이 레포에 존재.
-  - [ ] 응답 스키마가 문서와 다른 점이 있다면 `docs/research/drf-schema-notes.md` 로 메모.
+  - [x] 6개 법령 각각의 `lsId` 확정 (리서치에서 비어있던 항목 포함).
+  - [x] 4개 엔드포인트 중 3개 fixture XML 이 레포에 존재 (lsHistory 는 권한 에러 응답도 보존).
+  - [x] 응답 스키마가 문서와 다른 점이 있다면 `docs/research/drf-schema-notes.md` 로 메모. — JO 포맷, OC 유출, CDATA 전각기호 등 6건 기록.
 - **검증 방법**: fixture XML 을 직접 열어 예상 필드(조문번호·조문내용·항·호·목)가 있는지 수동 확인.
-- **예상 시간**: 3h
+- **실제 소요**: 1h
+- **구현 노트**: [2026-04-24_task0-drf-poc](./2026-04-24_task0-drf-poc.md)
 
 ---
 
