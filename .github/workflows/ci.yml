@@ -1,0 +1,72 @@
+name: ci
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      HAS_DEPLOY_KEY: ${{ secrets.DEPLOY_KEY_INTERNAL != '' }}
+
+    steps:
+      - name: Load SSH deploy key (trusted builds only)
+        if: env.HAS_DEPLOY_KEY == 'true'
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_KEY_INTERNAL }}
+
+      - name: Rewrite HTTPS submodule URL to SSH (so ssh-agent can auth)
+        if: env.HAS_DEPLOY_KEY == 'true'
+        run: git config --global url."git@github.com:".insteadOf "https://github.com/"
+
+      - name: Checkout (with submodules when key is present)
+        uses: actions/checkout@v4
+        with:
+          submodules: ${{ env.HAS_DEPLOY_KEY == 'true' && 'recursive' || 'false' }}
+
+      - name: Report submodule state
+        run: |
+          if [[ "$HAS_DEPLOY_KEY" == "true" ]]; then
+            git submodule status
+          else
+            echo "::notice::Running in fallback mode without private submodule (fork PR or missing secret)"
+            ls ai/prompts.example/
+          fi
+
+      - name: Verify initial hygiene
+        run: ./scripts/verify-initial-hygiene.sh
+
+      - name: Verify submodule layout
+        run: ./scripts/verify-submodule.sh
+
+      - name: Install pre-commit
+        run: pip install pre-commit
+
+      - name: Run pre-commit on all files
+        run: pre-commit run --all-files --show-diff-on-failure
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Trufflehog
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --only-verified
