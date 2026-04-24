@@ -161,20 +161,21 @@ flowchart LR
 - **목적**: `lawSearch.do`, `lawService.do`(target=law / lawjosub), `lsHistory` 4개 호출을 래핑한 Kotlin 인터페이스.
 - **선행 조건**: Task 0 (fixture), Task 1 (OC 주입 가능).
 - **작업 내용**:
-  - [ ] 먼저 작성할 테스트 (Given/When/Then):
-    - [ ] `LawOpenApiClientContractTest.kt` — WireMock + Task 0 fixture XML 을 리턴하게 세팅, 각 메서드가 올바른 URL/쿼리/헤더를 생성하는지, 응답이 도메인으로 파싱되는지.
-  - [ ] 구현:
-    - [ ] Spring 6 `RestClient` 사용, baseUrl `https://www.law.go.kr/DRF`.
-    - [ ] `searchLaws(query)`, `fetchLawByLsId(lsId, efYd?)`, `fetchArticle(lsId, jo, hang?, ho?, mok?, efYd?)`, `fetchHistory(query)` 4개 메서드.
-    - [ ] OC 는 `@Value("\${law.oc}")` 로 주입, 모든 URL 쿼리에 자동 첨부.
-    - [ ] `type=XML` 고정. JSON 미사용 이유 주석(문서 완결성이 XML 쪽이 높음).
-    - [ ] 429/5xx 재시도 3회(exponential), 4xx 즉시 실패.
-  - [ ] 리팩토링: URL 생성 로직을 `LawOpenApiUrlBuilder` 로 추출.
+  - [x] 먼저 작성할 테스트 (Given/When/Then):
+    - [x] `LawOpenApiClientContractTest.kt` — WireMock + Task 0 fixture XML. 각 메서드의 URL/쿼리 + 응답 파싱 + 재시도 + 권한실패 HTML 래핑 = 6 tests green.
+  - [x] 구현:
+    - [x] Spring 6 `RestClient` 사용, baseUrl `https://www.law.go.kr/DRF`.
+    - [x] `searchLaws(query)`, `fetchLawByLsId(lsId, efYd?)`, `fetchArticle(lsId, locator, efYd?)`, `fetchHistory(query)` 4개 메서드. 단 `fetchHistory` 는 권한 없어 `UnsupportedOperationException` 스텁.
+    - [x] OC 는 `LawOpenApiUrlBuilder` 생성자 파라미터로 주입. 모든 URL 에 자동 첨부.
+    - [x] `type=XML` 고정. JSON 미사용 이유 주석.
+    - [x] 429/5xx/네트워크 에러 재시도 3회(exponential). 4xx 즉시 실패. 권한실패 HTML → `LawOpenApiException`.
+  - [x] 리팩토링: URL 생성 로직을 `LawOpenApiUrlBuilder` 로 추출 완료.
 - **DoD**:
-  - [ ] 계약 테스트 4개 메서드 모두 green.
-  - [ ] 고정 IP 환경에서 실제 호출 1회 수동 성공 (임시 integration test, `@Tag("live")` 로 CI 제외).
+  - [x] 계약 테스트 green (WireMock 6건 + URL 빌더 단위 6건 = 12건).
+  - [~] 고정 IP 환경에서 실제 호출 1회 수동 성공 — Live 테스트는 `@Tag("live")` + `OC_LAW` + `RUN_LIVE_TESTS` 3중 가드. 현재 로컬 IP 가 법제처 화이트리스트에 없어 Task 6 (Cloud Run Job) 에서 실행 예정.
 - **검증 방법**: `./gradlew :api:test --tests "*LawOpenApiClientContractTest"`
-- **예상 시간**: 4h
+- **실제 소요**: 3h
+- **구현 노트**: [2026-04-24_task3-law-open-api-client](./2026-04-24_task3-law-open-api-client.md)
 
 ---
 
