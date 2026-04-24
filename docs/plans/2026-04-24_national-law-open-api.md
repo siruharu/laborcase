@@ -118,17 +118,19 @@ flowchart LR
 - **목적**: API 호출 출구 IP 고정과 OC 안전 보관(§P6).
 - **선행 조건**: 없음 (Task 0 과 병렬 가능, 단 Task 0 수행 전에 IP 확정 필요).
 - **작업 내용**:
-  - [ ] 먼저 작성할 테스트: `terraform plan` 이 drift 없이 실행되는지 CI workflow (`.github/workflows/infra-plan.yml`).
-  - [ ] 구현:
-    - [ ] VPC + Cloud Router + Cloud NAT + External Static IP.
-    - [ ] Secret Manager secret `law-oc` (값은 수동 `gcloud secrets versions add`, Terraform 은 리소스만).
-    - [ ] Cloud Run Job/Service 용 서비스계정 2개(`law-sync-sa`, `api-sa`) + `roles/secretmanager.secretAccessor` 바인딩.
-  - [ ] 리팩토링: IP 를 `outputs.tf` 로 노출 → 법제처 등록용 값 출력.
+  - [~] 먼저 작성할 테스트: `terraform plan` 이 drift 없이 실행되는지 CI workflow (`.github/workflows/infra-plan.yml`). — Task 2 합류 후 별도 PR 로 추가 예정
+  - [x] 구현:
+    - [x] VPC + Cloud Router + Cloud NAT + External Static IP.
+    - [x] Secret Manager secret `law-oc` (값은 수동 `gcloud secrets versions add`, Terraform 은 리소스만).
+    - [x] Cloud Run Job/Service 용 서비스계정 2개(`law-sync-sa`, `api-sa`) + `roles/secretmanager.secretAccessor` 바인딩.
+  - [x] 리팩토링: IP 를 `outputs.tf` 로 노출 → 법제처 등록용 값 출력 (`34.64.141.102`).
 - **DoD**:
-  - [ ] `terraform apply` 성공, 고정 IP 값을 법제처에 등록 완료.
-  - [ ] `gcloud secrets versions access latest --secret=law-oc` 으로 OC 를 SA 권한으로 읽을 수 있음.
+  - [x] `terraform apply` 성공 (10 리소스 생성).
+  - [ ] **고정 IP `34.64.141.102` 를 법제처에 등록** — 사용자 액션 필요 (open.law.go.kr OPEN API 신청 수정).
+  - [x] `gcloud secrets versions access latest --secret=law-oc` 으로 OC 를 읽을 수 있음.
 - **검증 방법**: Cloud Shell 에서 `curl --interface <내부IP> https://www.law.go.kr` 결과의 외부 IP 가 예상 고정 IP 인지 확인 (또는 Cloud Run Job smoke test).
-- **예상 시간**: 3h
+- **실제 소요**: 1.5h
+- **구현 노트**: [2026-04-24_task1-terraform-nat-secret](./2026-04-24_task1-terraform-nat-secret.md)
 
 ---
 
