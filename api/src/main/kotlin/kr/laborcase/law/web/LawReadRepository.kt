@@ -105,4 +105,57 @@ class LawReadRepository(private val jdbc: JdbcClient) {
         null -> null
         else -> null
     }
+
+    /**
+     * Cosine-similarity search over current-version article embeddings.
+     *
+     * Returns up to [limit] articles ranked by ascending cosine distance
+     * (0 = identical, ≤2 = orthogonal). The query vector must be a 4096-dim
+     * float array produced by Upstage's solar-embedding-1-large-query model.
+     */
+    fun findSimilarArticles(queryVector: FloatArray, limit: Int): List<ArticleSearchHit> {
+        require(queryVector.size == 4096) { "expected 4096-dim query vector, got ${queryVector.size}" }
+        require(limit in 1..100) { "limit must be 1..100, got $limit" }
+
+        val vectorLiteral = queryVector.joinToString(prefix = "[", postfix = "]") { it.toString() }
+
+        return jdbc.sql(
+            "SELECT l.ls_id, l.name_kr, l.short_name," +
+                " lv.lsi_seq, lv.effective_date, lv.promulgation_date, lv.revision_type," +
+                " a.jo, a.jo_branch, a.hang, a.ho, a.mok, a.title, a.body, a.effective_date AS article_effective," +
+                " (ae.vector <=> :probe::vector)::float8 AS distance" +
+                " FROM article_embedding ae" +
+                " JOIN article a ON a.id = ae.article_id" +
+                " JOIN law_version lv ON lv.id = a.law_version_id AND lv.is_current = TRUE" +
+                " JOIN law l ON l.id = lv.law_id" +
+                " ORDER BY ae.vector <=> :probe::vector" +
+                " LIMIT :n",
+        )
+            .param("probe", vectorLiteral)
+            .param("n", limit)
+            .query { rs, _ ->
+                ArticleSearchHit(
+                    law = LawSummary(
+                        lsId = rs.getString("ls_id"),
+                        nameKr = rs.getString("name_kr"),
+                        shortName = rs.getString("short_name"),
+                        lsiSeq = rs.getString("lsi_seq"),
+                        effectiveDate = rs.getDate("effective_date").toLocalDate(),
+                        promulgationDate = rs.getDate("promulgation_date").toLocalDate(),
+                        revisionType = rs.getString("revision_type"),
+                    ),
+                    article = ArticleDto(
+                        jo = rs.getString("jo").trim().toInt(),
+                        joBranch = rs.getObject("jo_branch", Integer::class.java)?.toInt(),
+                        hang = rs.getString("hang")?.trim()?.takeIf { it.isNotBlank() }?.toInt(),
+                        ho = rs.getString("ho")?.trim()?.takeIf { it.isNotBlank() }?.toInt(),
+                        mok = rs.getString("mok"),
+                        title = rs.getString("title"),
+                        body = rs.getString("body"),
+                        effectiveDate = rs.getDate("article_effective")?.toLocalDate(),
+                    ),
+                    distance = rs.getDouble("distance"),
+                )
+            }.list()
+    }
 }

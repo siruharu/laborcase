@@ -64,12 +64,18 @@ class SyncConfig {
     @Bean
     fun lawSeed(): LawSeed = LawSeedLoader.loadFromClasspath()
 
+    // UpstageEmbeddingClient is created whenever the API key is configured.
+    // The API service uses this for runtime query embedding even when
+    // `embedding.enabled=false` (which only gates the bulk passage embedder).
     @Bean(name = ["upstageEmbeddingClient"])
-    @org.springframework.context.annotation.Conditional(UpstageEnabledCondition::class)
+    @org.springframework.context.annotation.Conditional(UpstageKeyCondition::class)
     fun upstageEmbeddingClient(
         @Value("\${upstage.api-key:}") apiKey: String,
     ): UpstageEmbeddingClient = UpstageEmbeddingClient(apiKey = apiKey)
 
+    // ArticleEmbedder writes passage vectors during sync jobs. Gated on the
+    // `embedding.enabled` flag so production API rollouts don't accidentally
+    // re-embed when DSN-only flows would also activate the bean.
     @Bean(name = ["articleEmbedder"])
     @org.springframework.context.annotation.Conditional(UpstageEnabledCondition::class)
     fun articleEmbedder(
