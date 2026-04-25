@@ -11,8 +11,11 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.context.annotation.Bean
+import org.hamcrest.Matchers.containsString
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.Clock
@@ -105,6 +108,20 @@ class SearchControllerTest {
     // for ObjectProvider<T> doesn't beat Spring's autowired ObjectProvider
     // when there's also a @MockBean of the inner type. Behavior covered by
     // the @Conditional bean wiring in SyncConfig + manual smoke instead.
+
+    @Test
+    fun `OPTIONS preflight for POST search echoes CORS headers`() {
+        mockMvc.perform(
+            options("/api/v1/articles/search")
+                .header("Origin", "http://localhost:3000")
+                .header("Access-Control-Request-Method", "POST")
+                .header("Access-Control-Request-Headers", "content-type"),
+        )
+            .andExpect(status().isOk)
+            .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:3000"))
+            .andExpect(header().string("Access-Control-Allow-Methods", containsString("POST")))
+            .andExpect(header().string("Access-Control-Max-Age", "3600"))
+    }
 
     @Test
     fun `POST search clamps oversized limit to MAX_LIMIT`() {

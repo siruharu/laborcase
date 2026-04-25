@@ -40,6 +40,11 @@ server:
 law:
   oc: ${LAW_OC:}
 
+cors:
+  # Single origin is enough for MVP (frontend dev = localhost:3000, prod = laborcase.kr).
+  # If multiple origins are needed later, swap @CrossOrigin for a WebMvcConfigurer.
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
+
 laborcase:
   gcs:
     raw-bucket: ${LABORCASE_GCS_RAW_BUCKET:laborcase-raw}

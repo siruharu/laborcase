@@ -4,6 +4,7 @@ import kr.laborcase.law.embed.UpstageEmbeddingClient
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.CrossOrigin
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
@@ -24,6 +25,7 @@ import org.springframework.web.server.ResponseStatusException
  */
 @RestController
 @RequestMapping("/api/v1/articles")
+@CrossOrigin(origins = ["\${cors.allowed-origins}"], maxAge = 3600)
 class SearchController(
     private val repo: LawReadRepository,
     private val sourceMeta: SourceMetaFactory,

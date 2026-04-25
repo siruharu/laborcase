@@ -1,6 +1,7 @@
 package kr.laborcase.law.web
 
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.CrossOrigin
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
@@ -19,6 +20,7 @@ import org.springframework.http.HttpStatus
  */
 @RestController
 @RequestMapping("/api/v1/laws")
+@CrossOrigin(origins = ["\${cors.allowed-origins}"], maxAge = 3600)
 class LawController(
     private val repo: LawReadRepository,
     private val sourceMeta: SourceMetaFactory,

@@ -9,8 +9,10 @@ import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.context.annotation.Bean
+import org.hamcrest.Matchers.containsString
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.content
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import java.time.Clock
@@ -111,6 +113,29 @@ class LawControllerTest {
             .andExpect(status().isNotFound)
     }
 
+    @Test
+    fun `OPTIONS preflight from allowed origin echoes CORS headers`() {
+        mockMvc.perform(
+            options("/api/v1/laws")
+                .header("Origin", "http://localhost:3000")
+                .header("Access-Control-Request-Method", "GET"),
+        )
+            .andExpect(status().isOk)
+            .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:3000"))
+            .andExpect(header().string("Access-Control-Allow-Methods", containsString("GET")))
+            .andExpect(header().string("Access-Control-Max-Age", "3600"))
+    }
+
+    @Test
+    fun `OPTIONS preflight from disallowed origin is forbidden`() {
+        mockMvc.perform(
+            options("/api/v1/laws")
+                .header("Origin", "https://evil.example.com")
+                .header("Access-Control-Request-Method", "GET"),
+        )
+            .andExpect(status().isForbidden)
+    }
+
     companion object {
         private val SAMPLE_LAW_SUMMARY = LawSummary(
             lsId = "001872",
@@ -124,5 +149,8 @@ class LawControllerTest {
 
         private fun get(path: String): org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder =
             org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(path)
+
+        private fun options(path: String): org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder =
+            org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options(path)
     }
 }
