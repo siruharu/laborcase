@@ -4,6 +4,8 @@ import com.google.cloud.storage.Storage
 import com.google.cloud.storage.StorageOptions
 import kr.laborcase.law.client.LawOpenApiClient
 import kr.laborcase.law.client.LawOpenApiUrlBuilder
+import kr.laborcase.law.embed.ArticleEmbedder
+import kr.laborcase.law.embed.UpstageEmbeddingClient
 import kr.laborcase.law.storage.GcsRawXmlStore
 import kr.laborcase.law.storage.RawXmlStore
 import kr.laborcase.law.web.LawReadRepository
@@ -62,6 +64,19 @@ class SyncConfig {
     @Bean
     fun lawSeed(): LawSeed = LawSeedLoader.loadFromClasspath()
 
+    @Bean(name = ["upstageEmbeddingClient"])
+    @org.springframework.context.annotation.Conditional(UpstageEnabledCondition::class)
+    fun upstageEmbeddingClient(
+        @Value("\${upstage.api-key:}") apiKey: String,
+    ): UpstageEmbeddingClient = UpstageEmbeddingClient(apiKey = apiKey)
+
+    @Bean(name = ["articleEmbedder"])
+    @org.springframework.context.annotation.Conditional(UpstageEnabledCondition::class)
+    fun articleEmbedder(
+        jdbcClient: JdbcClient,
+        upstageEmbeddingClient: UpstageEmbeddingClient,
+    ): ArticleEmbedder = ArticleEmbedder(jdbcClient, upstageEmbeddingClient)
+
     @Bean
     fun fullSyncJob(
         client: LawOpenApiClient,
@@ -71,7 +86,8 @@ class SyncConfig {
         syncLog: SyncLogRepository,
         tx: TransactionTemplate,
         seed: LawSeed,
-    ): FullSyncJob = FullSyncJob(client, rawXmlStore, parser, repo, syncLog, tx, seed)
+        embedder: ArticleEmbedder?,
+    ): FullSyncJob = FullSyncJob(client, rawXmlStore, parser, repo, syncLog, tx, seed, embedder)
 
     @Bean
     fun deltaSyncJob(fullSyncJob: FullSyncJob): DeltaSyncJob = DeltaSyncJob(fullSyncJob)

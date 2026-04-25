@@ -2,6 +2,7 @@ package kr.laborcase.law.sync
 
 import kr.laborcase.law.client.LawOpenApiClient
 import kr.laborcase.law.client.LawSearchHit
+import kr.laborcase.law.embed.ArticleEmbedder
 import kr.laborcase.law.storage.RawXmlStore
 import kr.laborcase.law.xml.LawXmlParser
 import kr.laborcase.law.xml.ParsedLawBody
@@ -30,6 +31,7 @@ class FullSyncJob(
     private val syncLog: SyncLogRepository,
     private val tx: TransactionTemplate,
     private val seed: LawSeed,
+    private val embedder: ArticleEmbedder? = null,
 ) {
 
     private val log = LoggerFactory.getLogger(FullSyncJob::class.java)
@@ -60,6 +62,25 @@ class FullSyncJob(
                 }
                 log.info("[{}] law {} (lsId={}) → {}", jobName, entry.shortName, entry.lsId, outcome)
             }
+
+            // After every law has been persisted, embed any pending rows in a
+            // single pass. Kept outside the per-law transaction on purpose:
+            // Upstage calls are network-heavy and we don't want a transient
+            // Upstage 500 to roll back the DB writes we just made.
+            // Always run when embedder is configured. embedPending() is
+            // cheap when nothing is pending, and gating on `changed > 0`
+            // would silently skip the first-time embedding when articles
+            // had been imported in an earlier run before Upstage was wired.
+            if (embedder != null) {
+                val er = embedder.embedPending()
+                log.info(
+                    "[{}] embeddings embedded={} failed={}",
+                    jobName,
+                    er.embedded,
+                    er.failed,
+                )
+            }
+
             syncLog.success(logId, changed)
         } catch (e: Throwable) {
             // processSafely catches per-law errors, so reaching here implies a

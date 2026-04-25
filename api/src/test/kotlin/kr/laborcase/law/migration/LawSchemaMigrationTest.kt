@@ -102,19 +102,23 @@ class LawSchemaMigrationTest {
                 )
             }
 
-            // ivfflat embedding index is present
+            // V3 dropped the ivfflat index because pgvector 0.8 caps vector
+            // at 2000 dims and Upstage is 4096. Assert the index is gone and
+            // the column is the new width (guards against silent reverts).
             conn.prepareStatement(
                 """
-                SELECT indexdef FROM pg_indexes
+                SELECT count(*) AS c FROM pg_indexes
                 WHERE schemaname = 'public' AND indexname = 'article_embedding_ivfflat_idx'
                 """.trimIndent(),
             ).executeQuery().use { rs ->
-                assertTrue(rs.next(), "ivfflat embedding index must exist")
-                val indexDef = rs.getString("indexdef").lowercase()
+                rs.next()
+                assertTrue(rs.getInt("c") == 0, "V3 must have dropped the ivfflat index")
+                val indexDef: String? = null
                 assertTrue(
-                    indexDef.contains("ivfflat") && indexDef.contains("vector_cosine_ops"),
-                    "embedding index must use ivfflat + vector_cosine_ops, got: $indexDef",
+                    true,
+                    "placeholder to keep assertTrue import",
                 )
+                if (indexDef != null) error("unreachable")
             }
         }
     }

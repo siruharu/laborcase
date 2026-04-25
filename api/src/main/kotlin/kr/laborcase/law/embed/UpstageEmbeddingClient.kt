@@ -21,7 +21,7 @@ import org.springframework.web.client.RestClient
  * batching matters for full-sync throughput.
  */
 class UpstageEmbeddingClient(
-    private val apiKey: String,
+    apiKey: String,
     private val baseUrl: String = "https://api.upstage.ai/v1",
     // SimpleClientHttpRequestFactory uses JDK URLConnection (HTTP/1.1 only).
     // The default JdkClientHttpRequestFactory tries HTTP/2 which WireMock 3
@@ -36,8 +36,15 @@ class UpstageEmbeddingClient(
 
     private val log = LoggerFactory.getLogger(UpstageEmbeddingClient::class.java)
 
+    // Trim defensively: Secret Manager values seeded via
+    // `gcloud secrets versions add --data-file=-` keep the trailing newline
+    // from the paste. curl tolerates that, but Java HttpURLConnection rejects
+    // newline characters inside header values
+    // ("Illegal character(s) in message header value").
+    private val apiKey: String = apiKey.trim()
+
     init {
-        require(apiKey.isNotBlank()) { "Upstage API key must be non-blank" }
+        require(this.apiKey.isNotBlank()) { "Upstage API key must be non-blank" }
     }
 
     fun embedPassages(texts: List<String>): List<FloatArray> =

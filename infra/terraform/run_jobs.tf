@@ -161,6 +161,21 @@ resource "google_cloud_run_v2_job" "law_full_sync" {
           }
         }
 
+        env {
+          name = "UPSTAGE_API_KEY"
+          value_source {
+            secret_key_ref {
+              secret  = google_secret_manager_secret.upstage_api_key.secret_id
+              version = "latest"
+            }
+          }
+        }
+
+        env {
+          name  = "EMBEDDING_ENABLED"
+          value = "true"
+        }
+
         resources {
           limits = {
             cpu    = "1"
@@ -181,6 +196,7 @@ resource "google_cloud_run_v2_job" "law_full_sync" {
     google_project_iam_member.sync_cloudsql_client,
     google_secret_manager_secret_iam_member.law_oc_sync_accessor,
     google_secret_manager_secret_iam_member.db_password_sync_accessor,
+    google_secret_manager_secret_iam_member.upstage_sync_accessor,
     google_storage_bucket_iam_member.raw_sync_writer,
   ]
 }
@@ -242,6 +258,21 @@ resource "google_cloud_run_v2_job" "law_delta_sync" {
           }
         }
 
+        env {
+          name = "UPSTAGE_API_KEY"
+          value_source {
+            secret_key_ref {
+              secret  = google_secret_manager_secret.upstage_api_key.secret_id
+              version = "latest"
+            }
+          }
+        }
+
+        env {
+          name  = "EMBEDDING_ENABLED"
+          value = "true"
+        }
+
         resources {
           limits = {
             cpu    = "1"
@@ -260,6 +291,7 @@ resource "google_cloud_run_v2_job" "law_delta_sync" {
     google_project_iam_member.sync_cloudsql_client,
     google_secret_manager_secret_iam_member.law_oc_sync_accessor,
     google_secret_manager_secret_iam_member.db_password_sync_accessor,
+    google_secret_manager_secret_iam_member.upstage_sync_accessor,
     google_storage_bucket_iam_member.raw_sync_writer,
   ]
 }
