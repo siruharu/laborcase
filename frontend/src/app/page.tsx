@@ -1,23 +1,35 @@
 import { DisclaimerDetailBox } from "@/components/disclaimer-detail-box";
 import { DisclaimerInline } from "@/components/disclaimer-inline";
+import { RecentSearches } from "@/components/recent-searches";
+import { SearchBox } from "@/components/search-box";
 import { StaleBanner } from "@/components/stale-banner";
 
 /**
- * 폰트 + Disclaimer 컴포넌트 검증용 임시 페이지.
+ * 폰트 + Disclaimer + SearchBox 검증용 임시 페이지.
  * FT-Task 6 (랜딩 페이지) 에서 Hero + 법령 카드 그리드로 덮어쓴다.
  */
 export default function Home() {
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-6 py-12">
-      <header className="space-y-2">
+      <header className="space-y-3">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">
           laborcase 프론트 미리보기
         </h1>
         <p className="text-base text-muted-foreground">
-          Pretendard GOV + 4-layer disclaimer 컴포넌트 검증용. FT-Task 6 에서
-          본 랜딩으로 교체된다.
+          폰트 / 4-layer disclaimer / SearchBox 검증용. FT-Task 6 에서 본
+          랜딩으로 교체된다.
         </p>
       </header>
+
+      <section className="space-y-3">
+        <h2 className="text-xl font-semibold">SearchBox + RecentSearches</h2>
+        <SearchBox autoFocus />
+        <RecentSearches />
+        <p className="text-xs text-muted-foreground">
+          검색어 제출 → /search?q=... 로 navigation. 최근 검색은 localStorage 에
+          저장되어 두 번째 방문 시 칩으로 표시된다.
+        </p>
+      </section>
 
       <section className="space-y-3">
         <h2 className="text-xl font-semibold">StaleBanner — stale=true</h2>
