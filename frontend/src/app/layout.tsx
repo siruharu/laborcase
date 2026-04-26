@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import { DisclaimerFooter } from "@/components/disclaimer-footer";
 
 const pretendardGov = localFont({
   src: [
@@ -55,7 +56,10 @@ export default function RootLayout({
       lang="ko"
       className={`${pretendardGov.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col font-sans">
+        {children}
+        <DisclaimerFooter />
+      </body>
     </html>
   );
 }
