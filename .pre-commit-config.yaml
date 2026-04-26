@@ -26,3 +26,13 @@ repos:
       - id: detect-secrets
         args: [--baseline, .secrets.baseline]
         exclude: '(^\.secrets\.baseline$|^ai/prompts/|^scripts/test-pre-commit-regression\.sh$)'
+
+  - repo: local
+    hooks:
+      - id: frontend-lint
+        name: frontend ESLint
+        # frontend/ 안에서 전체 린트 — 한 파일만 검사하면 cross-file 룰 (no-unused-vars 등) 이 누락된다.
+        entry: bash -c 'cd frontend && npm run lint'
+        language: system
+        files: ^frontend/.*\.(ts|tsx|mjs|js)$
+        pass_filenames: false
