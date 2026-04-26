@@ -1,14 +1,15 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const MOCK_BACKEND = "http://localhost:18080";
+
 /**
- * 로컬 통합 smoke. 백엔드 + Cloud SQL 까지 띄운 상태에서 돌린다.
- * Task 11 의 수동 검증을 자동화한 형태.
+ * Smoke 자동화. 두 개의 webServer 를 띄운다:
+ *   1) tests/e2e/mock-server.ts — fixture 응답을 돌려주는 Node http 서버.
+ *   2) next dev — NEXT_PUBLIC_API_BASE_URL 을 mock backend 로 가리키게.
  *
- * webServer 는 frontend dev 서버만 자동 기동. backend 는 외부에서 별도로
- * `./gradlew :api:bootRun` 또는 prod URL 지정 (CI 후속).
- *
- * 모바일은 webkit 의존을 피해 Pixel 7 (chromium 기반) viewport 사용.
- * iOS Safari 정확 검증은 Task 11 수동으로 보강.
+ * 모바일은 webkit 의존을 피해 Pixel 7 (chromium) viewport 사용.
+ * 실제 backend + Cloud SQL 통합 검증은 사용자 환경에서 별도로 수행
+ * (CLAUDE.md §사용자가 따를 원칙 — prod DB 직접 접근 금지).
  */
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -21,16 +22,28 @@ export default defineConfig({
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
-  webServer: {
-    command: "npm run dev",
-    url: "http://localhost:3000",
-    reuseExistingServer: true,
-    timeout: 60_000,
-    env: {
-      NEXT_PUBLIC_API_BASE_URL:
-        process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080",
+  webServer: [
+    {
+      command: "npx tsx tests/e2e/mock-server.ts",
+      port: 18080,
+      reuseExistingServer: !process.env.CI,
+      timeout: 30_000,
+      stdout: "pipe",
+      stderr: "pipe",
     },
-  },
+    {
+      command: "npm run dev",
+      url: "http://localhost:3000",
+      reuseExistingServer: !process.env.CI,
+      timeout: 60_000,
+      env: {
+        NEXT_PUBLIC_API_BASE_URL: MOCK_BACKEND,
+        // smoke 가 mock state 를 토글한 직후 페이지를 다시 GET 했을 때 RSC
+        // fetch 캐시가 stale flag 를 가려버리지 않도록 revalidate 끔.
+        LABORCASE_API_REVALIDATE: "0",
+      },
+    },
+  ],
   projects: [
     {
       name: "desktop",

@@ -6,8 +6,20 @@
  *
  * 캐시 정책:
  * - 검색 (`searchArticles`): no-store. 사용자 쿼리는 매번 다르고 캐시 가치 낮음.
- * - 목록 (`listLaws`), 조문 (`getLawArticles`): revalidate 60s. 거의 안 바뀜.
+ * - 목록 (`listLaws`), 조문 (`getLawArticles`): revalidate (기본 60s).
+ *   `LABORCASE_API_REVALIDATE` 로 override (Playwright smoke 가 0 으로 끔).
  */
+
+const REVALIDATE_SECONDS = parseRevalidate(
+  process.env.LABORCASE_API_REVALIDATE,
+);
+
+function parseRevalidate(raw: string | undefined): number {
+  if (raw === undefined) return 60;
+  const n = Number.parseInt(raw, 10);
+  if (Number.isNaN(n) || n < 0) return 60;
+  return n;
+}
 
 import { env } from "./env";
 import type {
@@ -63,7 +75,7 @@ export async function searchArticles(
 
 export async function listLaws(): Promise<ApiResponse<LawSummary[]>> {
   return apiFetch<LawSummary[]>("/api/v1/laws", {
-    next: { revalidate: 60 },
+    next: { revalidate: REVALIDATE_SECONDS },
   });
 }
 
@@ -80,6 +92,6 @@ export async function getLawArticles(
   const qs = params.toString();
   const path = `/api/v1/laws/${encodeURIComponent(key)}/articles${qs ? `?${qs}` : ""}`;
   return apiFetch<ArticleListResponse>(path, {
-    next: { revalidate: 60 },
+    next: { revalidate: REVALIDATE_SECONDS },
   });
 }
