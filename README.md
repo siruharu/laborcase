@@ -102,6 +102,26 @@ cd laborcase
 - `dev` — 일상 작업 브랜치. `feature/*` → `dev` → `main` 순
 - 상세: [docs/decisions/adr-0001-repo-split.md](./docs/decisions/adr-0001-repo-split.md)
 
+## 배포 (prod = GCP Cloud Run)
+
+```bash
+# 정상 케이스 (95%): tag 푸시 한 줄
+git tag v0.1.X
+git push origin v0.1.X
+```
+
+GitHub Actions 가 keyless WIF 인증으로 GCP 에 접근, Cloud Build 빌드 후 Cloud Run revision 갱신. 약 5-10분.
+
+| 항목 | 위치 |
+|---|---|
+| 첫 셋업 / 트러블슈팅 / 롤백 | [`docs/runbooks/deploy.md`](./docs/runbooks/deploy.md) |
+| 배포 결정 박제 | [`adr-0004-cloud-run-prod-deploy.md`](./docs/decisions/adr-0004-cloud-run-prod-deploy.md) |
+| 인프라 (terraform) | [`infra/terraform/README.md`](./infra/terraform/README.md) |
+
+현재 prod URL:
+- API: `https://laborcase-api-mxq42pqgaa-du.a.run.app`
+- Frontend: `https://laborcase-frontend-mxq42pqgaa-du.a.run.app`
+
 ## 기여
 
 이 프로젝트는 법률 정보 접근성 개선을 목표로 합니다. 기여 환영합니다.
