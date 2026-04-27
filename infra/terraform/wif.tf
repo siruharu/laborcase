@@ -82,20 +82,17 @@ resource "google_service_account_iam_member" "deployer_wif_laborcase_internal" {
 # ── Deploy-time roles for deployer-sa ──────────────────────────────────
 # Cloud Build (`gcloud builds submit`) + Cloud Run revision update.
 
-resource "google_project_iam_member" "deployer_cloudbuild_editor" {
+# `roles/cloudbuild.builds.builder` 는 standalone Cloud Build 호출자에
+# 권장되는 combined role. cloudbuild.builds.editor + serviceusage.services
+# .use + storage.buckets.* + storage.objects.* + secretmanager.versions
+# .access 등을 한 묶음으로 부여한다.
+#
+# 발견 경위: 첫 GHA 실행이 cloudbuild.builds.editor + serviceusage.
+# serviceUsageConsumer 조합으로도 staging bucket 접근에서 거부됨. GCP 의
+# 새 Cloud Build 정책 (2024+) 에서 builder role 이 사실상 표준.
+resource "google_project_iam_member" "deployer_cloudbuild_builder" {
   project = var.project_id
-  role    = "roles/cloudbuild.builds.editor"
-  member  = "serviceAccount:${google_service_account.deployer.email}"
-}
-
-# `gcloud builds submit` 첫 호출이 staging bucket (`<project>_cloudbuild`)
-# 접근 시 `serviceusage.services.use` 권한을 요구한다. cloudbuild.builds.
-# editor 는 이 권한을 포함하지 않으므로 별도 grant.
-# 발견 경위: GHA 첫 실행에서 ERROR: "The user is forbidden from accessing
-# the bucket [...cloudbuild]. ... serviceusage.services.use ...".
-resource "google_project_iam_member" "deployer_serviceusage_consumer" {
-  project = var.project_id
-  role    = "roles/serviceusage.serviceUsageConsumer"
+  role    = "roles/cloudbuild.builds.builder"
   member  = "serviceAccount:${google_service_account.deployer.email}"
 }
 
