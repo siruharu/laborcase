@@ -58,3 +58,13 @@ output "image_uri" {
   description = "Canonical image URI pinned by the Cloud Run Jobs."
   value       = local.image_uri
 }
+
+output "api_service_name" {
+  description = "Cloud Run v2 service name for the API. Used by `gcloud run services update` in the deploy workflow."
+  value       = google_cloud_run_v2_service.api.name
+}
+
+output "api_service_url" {
+  description = "Public URL of the API service (Cloud Run-assigned `*.run.app`). Set NEXT_PUBLIC_API_BASE_URL to this in the frontend deploy workflow."
+  value       = google_cloud_run_v2_service.api.uri
+}
