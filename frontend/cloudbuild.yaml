@@ -1,0 +1,53 @@
+# Cloud Build pipeline for the laborcase frontend image.
+#
+# Single docker build (multi-stage Dockerfile in frontend/Dockerfile) +
+# push two tags. NEXT_PUBLIC_API_BASE_URL 은 build-time inline 이므로
+# substitution 으로 prod 값을 주입한다.
+#
+# Run locally:
+#   gcloud builds submit --config frontend/cloudbuild.yaml \
+#     --substitutions=COMMIT_SHA=$(git rev-parse --short HEAD),_NEXT_PUBLIC_API_BASE_URL=https://laborcase-api-...run.app \
+#     --project laborcase-prod .
+#
+# Run from CI: deploy-frontend.yml (DT-Task 9) 가 GITHUB_SHA + API URL 을
+# substitution 으로 forward.
+
+steps:
+  - id: docker-build
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --build-arg
+      - "NEXT_PUBLIC_API_BASE_URL=${_NEXT_PUBLIC_API_BASE_URL}"
+      - -t
+      - "${_AR_HOST}/${PROJECT_ID}/${_REPO}/frontend:${COMMIT_SHA}"
+      - -t
+      - "${_AR_HOST}/${PROJECT_ID}/${_REPO}/frontend:latest"
+      - -f
+      - frontend/Dockerfile
+      - .
+
+  - id: docker-push
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - --all-tags
+      - "${_AR_HOST}/${PROJECT_ID}/${_REPO}/frontend"
+
+substitutions:
+  _AR_HOST: asia-northeast3-docker.pkg.dev
+  _REPO: laborcase-images
+  # CI 가 prod API Cloud Run URL 을 forward. 미지정 시 빌드 fail 하지 않게
+  # placeholder default (local manual run 용).
+  _NEXT_PUBLIC_API_BASE_URL: "http://localhost:8080"
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+images:
+  - "${_AR_HOST}/${PROJECT_ID}/${_REPO}/frontend:${COMMIT_SHA}"
+  - "${_AR_HOST}/${PROJECT_ID}/${_REPO}/frontend:latest"
+
+# Next.js build (TypeScript + Tailwind + Pretendard 4 weight subset 처리)
+# 가 cold cache 에서 ~2-3분. 안전하게 600s.
+timeout: 600s
