@@ -89,3 +89,24 @@ resource "google_monitoring_alert_policy" "api_down" {
     mime_type = "text/markdown"
   }
 }
+
+# ── Billing budget alert (분석 §P5-b) ────────────────────────────────
+# 월 예산 $50, 60/80/100% threshold 의 의도. terraform 자동화 시도 후
+# 모든 변수 형식 점검 (units string / projects path / channel) 했음에도
+# billingbudgets.googleapis.com 가 specifc field 를 명시 안 한 채
+# "Request contains an invalid argument" 400 으로 거부.
+#
+# 잠정 결정: budget 은 GCP Console 에서 사용자 manual 5분 셋업으로
+# 처리. 절차는 docs/runbooks/deploy.md (DT-Task 15) 에 박제 예정.
+# 절차 요약:
+#   Cloud Console → Billing → Budgets & alerts → Create budget
+#     name = "laborcase monthly budget 50 USD"
+#     budget type = Specified amount, $50 USD
+#     scope = Project: laborcase-prod
+#     thresholds = Actual 60%, 80%, 100% + Forecasted 100%
+#     email recipients = siru.haru7419@gmail.com (billing user 자동)
+
+# resource "google_billing_budget" "monthly" {
+#   billing_account = var.billing_account_id
+#   ...
+# }

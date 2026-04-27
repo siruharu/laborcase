@@ -45,3 +45,15 @@ variable "alert_email" {
   type        = string
   default     = "siru.haru7419@gmail.com"
 }
+
+variable "billing_account_id" {
+  description = "Cloud Billing account that owns laborcase-prod. Format: 0XXXXX-XXXXXX-XXXXXX (no `billingAccounts/` prefix)."
+  type        = string
+  default     = "01FB4F-9EB47D-3621F8"
+}
+
+variable "monthly_budget_usd" {
+  description = "Monthly budget in USD that triggers email alerts at 60/80/100%. Defaults to $50 — analysis §P5-b. 베타 트래픽 가정 + Cloud SQL idle 비용 dominant."
+  type        = number
+  default     = 50
+}
