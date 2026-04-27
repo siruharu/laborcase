@@ -110,15 +110,27 @@ resource "google_cloud_run_v2_service" "api" {
         }
       }
 
+      # SyncConfig.lawOpenApiClient 가 prod profile 에서도 평가되므로
+      # LAW_OC 가 비면 application context 가 fail. API 자체는 법제처 호출
+      # 안 하지만 bean 생성 단계만 통과시키기 위해 sync job 과 동일하게 주입.
       env {
-        name = "SENTRY_DSN"
+        name = "LAW_OC"
         value_source {
           secret_key_ref {
-            secret  = google_secret_manager_secret.sentry_dsn.secret_id
+            secret  = google_secret_manager_secret.law_oc.secret_id
             version = "latest"
           }
         }
       }
+
+      # SENTRY_DSN 은 secret 에 valid DSN 이 seed 된 후 add 한다. 빈/whitespace
+      # DSN 은 Sentry SDK 가 URISyntaxException 으로 die → application context
+      # 시작 실패 → startup probe 실패. application.yml 의 ${SENTRY_DSN:} 가
+      # 빈 default 라 env 자체를 안 내려주면 starter 가 no-op 으로 시작한다.
+      # Seed 절차:
+      #   echo "https://...@sentry.io/..." | gcloud secrets versions add \
+      #     sentry-dsn --data-file=- --project=laborcase-prod
+      # 그 후 이 env block 을 복원하고 redeploy.
 
       # JVM cold-start can take several seconds; give startup probe enough
       # budget (failure_threshold * period_seconds = 150s) before Cloud Run
