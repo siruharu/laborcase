@@ -125,6 +125,22 @@ resource "google_service_account_iam_member" "deployer_actas_frontend" {
   member             = "serviceAccount:${google_service_account.deployer.email}"
 }
 
+# Cloud Build 의 build runner 가 default compute SA
+# (`<project-number>-compute@developer.gserviceaccount.com`) 인 신규
+# 프로젝트(2024+) 정책. `gcloud builds submit` 호출자(deployer-sa) 는 이
+# 빌드 SA 를 actAs 권한이 필요. 발견: GHA 첫 실행에서 ERROR
+# "caller does not have permission to act as service account .../<num>"
+# (113339563568809375726 = 936735263575-compute@developer.gserviceaccount.com).
+data "google_project" "current" {
+  project_id = var.project_id
+}
+
+resource "google_service_account_iam_member" "deployer_actas_default_compute" {
+  service_account_id = "projects/${var.project_id}/serviceAccounts/${data.google_project.current.number}-compute@developer.gserviceaccount.com"
+  role               = "roles/iam.serviceAccountUser"
+  member             = "serviceAccount:${google_service_account.deployer.email}"
+}
+
 # Read images during deploy + write images during Cloud Build. Cloud Build
 # itself runs as the *project Cloud Build SA*, but the deployer is what
 # actually queues the build, so the writer role is stamped here for
