@@ -39,3 +39,9 @@ variable "github_owner" {
   type        = string
   default     = "siruharu"
 }
+
+variable "alert_email" {
+  description = "Email address that receives Cloud Monitoring uptime alerts and Cloud Billing budget notifications. Single channel for MVP — Slack 도입 시 별도 channel 추가."
+  type        = string
+  default     = "siru.haru7419@gmail.com"
+}
