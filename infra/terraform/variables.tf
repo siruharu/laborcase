@@ -33,3 +33,9 @@ variable "frontend_allowed_origin" {
   type        = string
   default     = "http://localhost:3000"
 }
+
+variable "github_owner" {
+  description = "GitHub user/org that owns the laborcase repos. Used by the Workload Identity Federation provider's attribute_condition so only this owner's workflows can mint tokens."
+  type        = string
+  default     = "siruharu"
+}

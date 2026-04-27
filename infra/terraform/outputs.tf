@@ -68,3 +68,18 @@ output "api_service_url" {
   description = "Public URL of the API service (Cloud Run-assigned `*.run.app`). Set NEXT_PUBLIC_API_BASE_URL to this in the frontend deploy workflow."
   value       = google_cloud_run_v2_service.api.uri
 }
+
+output "wif_provider_name" {
+  description = "Full name of the Workload Identity Pool Provider — set as the WIF_PROVIDER GitHub Actions secret. Format: projects/<num>/locations/global/workloadIdentityPools/github-pool/providers/github-oidc."
+  value       = google_iam_workload_identity_pool_provider.github_oidc.name
+}
+
+output "deployer_sa_email" {
+  description = "Service account that GHA workflows impersonate via WIF. Set as the DEPLOYER_SA_EMAIL GitHub Actions secret."
+  value       = google_service_account.deployer.email
+}
+
+output "frontend_sa_email" {
+  description = "Runtime SA for the Next.js Cloud Run service. Used by frontend_service.tf in DT-Task 8."
+  value       = google_service_account.frontend.email
+}
