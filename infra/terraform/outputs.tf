@@ -83,3 +83,13 @@ output "frontend_sa_email" {
   description = "Runtime SA for the Next.js Cloud Run service. Used by frontend_service.tf in DT-Task 8."
   value       = google_service_account.frontend.email
 }
+
+output "frontend_service_name" {
+  description = "Cloud Run v2 service name for the Next.js frontend."
+  value       = google_cloud_run_v2_service.frontend.name
+}
+
+output "frontend_service_url" {
+  description = "Public URL of the frontend service (Cloud Run-assigned `*.run.app`). Use this as the value of CORS_ALLOWED_ORIGINS env on the API in DT-Task 11."
+  value       = google_cloud_run_v2_service.frontend.uri
+}
