@@ -14,7 +14,10 @@ LABEL org.opencontainers.image.source="https://github.com/siruharu/laborcase" \
       org.opencontainers.image.description="laborcase backend — API + sync jobs"
 
 COPY api/build/libs/laborcase-api-*-SNAPSHOT.jar /app/app.jar
-COPY --chmod=0755 api/docker-entrypoint.sh /entrypoint.sh
+# `--chmod` 는 BuildKit 전용. Cloud Build 의 classic docker daemon 도 동작
+# 하도록 별도 RUN 으로 권한 설정.
+COPY api/docker-entrypoint.sh /entrypoint.sh
+RUN chmod 0755 /entrypoint.sh
 
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75 -Djava.security.egd=file:/dev/./urandom"
 

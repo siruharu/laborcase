@@ -1,0 +1,42 @@
+# gcloud builds submit 의 source upload 에서 제외할 경로.
+# .gcloudignore 가 없으면 gcloud 가 자동으로 .gitignore 기반 ignore 를 적용하지만,
+# 명시적으로 두면 build context 크기를 사람-읽기 쉽게 컨트롤할 수 있다.
+
+.git/
+.gcloudignore
+.github/
+
+# Build artifacts (cloudbuild step 이 다시 만든다).
+**/.gradle/
+**/build/
+**/node_modules/
+**/.next/
+**/__pycache__/
+**/*.pyc
+
+# Test artifacts.
+frontend/test-results/
+frontend/playwright-report/
+frontend/tests/e2e/__captures__/
+**/.pytest_cache/
+
+# Editor / OS noise.
+.idea/
+.vscode/
+.DS_Store
+*.swp
+
+# Project artifacts not needed in any container build.
+docs/
+ai/prompts/
+infra/.terraform/
+infra/**/.terraform/
+pipeline/raw/
+
+# Secrets — defense in depth (real protection is .gitignore + .gitleaks).
+.env
+.env.*
+!.env.example
+*.sa.json
+*-sa.json
+service-account*.json

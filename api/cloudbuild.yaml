@@ -1,0 +1,66 @@
+# Cloud Build pipeline for the laborcase API image.
+#
+# Two-step build (gradle bootJar → docker build) keeps the existing
+# single-stage Dockerfile (api/Dockerfile) intact. Same image serves the
+# API service AND both Cloud Run Jobs (full-sync / delta-sync) — the
+# entrypoint dispatches by JOB_MODE.
+#
+# Run locally:
+#   gcloud builds submit --config api/cloudbuild.yaml \
+#     --substitutions=COMMIT_SHA=$(git rev-parse --short HEAD) \
+#     --project laborcase-prod .
+#
+# Run from CI: the deploy-api.yml workflow forwards $GITHUB_SHA as
+# COMMIT_SHA. The Cloud Build SA needs roles/artifactregistry.writer on
+# the laborcase-images repo (default Cloud Build SA already has it via
+# the project-level binding GCP grants on first build).
+
+steps:
+  - id: gradle-build
+    name: eclipse-temurin:21-jdk-noble
+    dir: api
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -eux
+        # api/ 가 이미 자체 root gradle 프로젝트 (api/settings.gradle.kts) 라
+        # `:api:` 접두사 없이 root 의 bootJar task 호출.
+        ./gradlew bootJar --no-daemon
+
+  - id: docker-build
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - "${_AR_HOST}/${PROJECT_ID}/${_REPO}/api:${COMMIT_SHA}"
+      - -t
+      - "${_AR_HOST}/${PROJECT_ID}/${_REPO}/api:latest"
+      - -f
+      - api/Dockerfile
+      - .
+
+  - id: docker-push
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - --all-tags
+      - "${_AR_HOST}/${PROJECT_ID}/${_REPO}/api"
+
+substitutions:
+  _AR_HOST: asia-northeast3-docker.pkg.dev
+  _REPO: laborcase-images
+
+# Pinned region keeps build artifacts in the same region as the runtime
+# (asia-northeast3). Cloud Build picks a worker in the closest region.
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+# Push annotation lets `gcloud builds submit` print final image URIs.
+images:
+  - "${_AR_HOST}/${PROJECT_ID}/${_REPO}/api:${COMMIT_SHA}"
+  - "${_AR_HOST}/${PROJECT_ID}/${_REPO}/api:latest"
+
+# Gradle cold cache + docker push for ~120 MB jar = ~3-5 minutes.
+# Bump if first build needs to download more dependencies.
+timeout: 1200s
