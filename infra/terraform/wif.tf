@@ -88,6 +88,17 @@ resource "google_project_iam_member" "deployer_cloudbuild_editor" {
   member  = "serviceAccount:${google_service_account.deployer.email}"
 }
 
+# `gcloud builds submit` 첫 호출이 staging bucket (`<project>_cloudbuild`)
+# 접근 시 `serviceusage.services.use` 권한을 요구한다. cloudbuild.builds.
+# editor 는 이 권한을 포함하지 않으므로 별도 grant.
+# 발견 경위: GHA 첫 실행에서 ERROR: "The user is forbidden from accessing
+# the bucket [...cloudbuild]. ... serviceusage.services.use ...".
+resource "google_project_iam_member" "deployer_serviceusage_consumer" {
+  project = var.project_id
+  role    = "roles/serviceusage.serviceUsageConsumer"
+  member  = "serviceAccount:${google_service_account.deployer.email}"
+}
+
 # Cloud Build streams source via gs://<project>_cloudbuild bucket; the
 # editor role above includes that, but the legacy bucket needs an explicit
 # ObjectAdmin in some accounts.
