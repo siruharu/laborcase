@@ -29,9 +29,9 @@ variable "api_max_instances" {
 }
 
 variable "frontend_allowed_origin" {
-  description = "Origin allowed by Spring Boot @CrossOrigin in production. Until the frontend Cloud Run service exists this stays as the dev default; flip to the real frontend URL in Task 11 (`gcloud run services update --update-env-vars CORS_ALLOWED_ORIGINS=...`)."
+  description = "Origin allowed by Spring Boot @CrossOrigin in production. Hardcoded to the current frontend Cloud Run URL — terraform 의 cross-resource ref (api → frontend) 가 cycle 을 만들기 때문 (frontend 도 api.uri 를 사용). frontend service 가 재생성되어 hash 가 바뀌면 이 default 를 update."
   type        = string
-  default     = "http://localhost:3000"
+  default     = "https://laborcase-frontend-mxq42pqgaa-du.a.run.app"
 }
 
 variable "github_owner" {
