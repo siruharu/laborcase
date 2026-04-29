@@ -1,6 +1,10 @@
-# 노동법 판례 검색 서비스 (가칭)
+# laborcase — 노동법 판례 검색 서비스 (가칭)
+
+[![공공누리 제1유형](https://www.kogl.or.kr/images/front/sub/img_opentype01_m.jpg)](https://www.kogl.or.kr/info/licenseType1.do) [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE)
 
 > **법률 자문이 아닌 정보 제공 서비스입니다.** 본 프로젝트는 한국 공개 판례와 법령을 구조화하여 노동자가 본인 상황과 유사한 사례를 찾아볼 수 있게 돕는 도구입니다. 구체적 사건에 대한 판단은 반드시 변호사 또는 공인노무사와 상담하세요.
+
+본 서비스는 [법제처 국가법령정보센터](https://www.law.go.kr) 가 **공공누리 제1유형** 으로 개방한 법령 정보를 이용합니다. 상세는 [docs/legal/source-attribution.md](./docs/legal/source-attribution.md).
 
 ## 왜 만들었나
 
@@ -80,27 +84,43 @@
 ### 시작하기
 
 ```bash
-# 저장소 클론
-git clone https://github.com/[username]/labor-case-web.git
-cd labor-case-web
+# 저장소 클론 (submodule 접근 권한이 있을 때만 ai/prompts/ 가 채워진다)
+git clone --recurse-submodules https://github.com/siruharu/laborcase.git
+cd laborcase
 
-# DB 실행
-docker-compose up -d postgres
+# 한 줄로 환경 점검·pre-commit 설치
+./scripts/bootstrap.sh
 
-# Frontend
-cd frontend
-npm install
-npm run dev
-
-# Backend API
-cd ../api
-./gradlew bootRun
-
-# AI Server
-cd ../ai
-pip install -r requirements.txt
-uvicorn main:app --reload
+# 상세 서비스 실행은 각 하위 프로젝트 README 참조 (frontend/api/ai)
 ```
+
+외부 기여자 등 `ai/prompts/` submodule 접근 권한이 없는 경우에도 빌드는 동작합니다. 빌드 시스템이 `ai/prompts.example/` 를 폴백으로 로드하며, 민감한 실제 운영 프롬프트는 [laborcase-internal](https://github.com/siruharu/laborcase-internal) private 레포에 관리됩니다.
+
+### 브랜치 전략
+
+- `main` — 릴리스/안정본. 직접 push 금지, PR + CODEOWNERS 리뷰 필수
+- `dev` — 일상 작업 브랜치. `feature/*` → `dev` → `main` 순
+- 상세: [docs/decisions/adr-0001-repo-split.md](./docs/decisions/adr-0001-repo-split.md)
+
+## 배포 (prod = GCP Cloud Run)
+
+```bash
+# 정상 케이스 (95%): suffix tag 푸시
+git tag v0.1.X-api v0.1.X-fe
+git push origin v0.1.X-api v0.1.X-fe
+```
+
+GitHub Actions 가 keyless WIF 인증으로 GCP 에 접근, Cloud Build 빌드 후 Cloud Run revision 갱신. 약 5-10분.
+
+| 항목 | 위치 |
+|---|---|
+| 첫 셋업 / 트러블슈팅 / 롤백 | [`docs/runbooks/deploy.md`](./docs/runbooks/deploy.md) |
+| 배포 결정 박제 | [`adr-0004-cloud-run-prod-deploy.md`](./docs/decisions/adr-0004-cloud-run-prod-deploy.md) |
+| 인프라 (terraform) | [`infra/terraform/README.md`](./infra/terraform/README.md) |
+
+현재 prod URL:
+- API: `https://laborcase-api-mxq42pqgaa-du.a.run.app`
+- Frontend: `https://laborcase-frontend-mxq42pqgaa-du.a.run.app`
 
 ## 기여
 
@@ -117,7 +137,9 @@ uvicorn main:app --reload
 
 ## 라이선스
 
-Apache License 2.0
+**코드**: [Apache License 2.0](./LICENSE)
+
+**법령 원문 데이터**: 법제처 국가법령정보센터 — [공공누리 제1유형 (출처표시)](https://www.kogl.or.kr/info/licenseType1.do). 본 레포는 해당 데이터를 가공·저장하지 않으며, 실시간 또는 배치 수집한 원문은 이용 시점의 출처 링크와 함께 제시됩니다.
 
 이 라이선스는 본 코드의 사용·수정·재배포를 허용합니다. 단, 본 서비스를 상업적으로 복제 운영할 경우 법적 책임은 운영자에게 있습니다.
 

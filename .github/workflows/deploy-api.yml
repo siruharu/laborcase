@@ -1,0 +1,122 @@
+# =============================================================================
+# laborcase API 를 Cloud Run 에 배포하는 GitHub Actions workflow.
+# =============================================================================
+#
+# 동작 요약 (사용자가 한 줄로 부를 때):
+#   git tag v0.1.0-api && git push origin v0.1.0-api
+#   → 이 파일이 자동 실행 → 이미지 빌드 → Cloud Run 새 revision 으로 교체.
+#
+# 인증 방식: Workload Identity Federation (WIF, keyless).
+#   GitHub 가 발급한 OIDC ID token 을 GCP 가 신뢰한다는 사전 합의 (Task 3 의
+#   terraform 으로 잡음) 가 있어, service account JSON key 같은 비밀 파일
+#   없이 deployer-sa 를 impersonate 할 수 있다.
+#
+# 필요한 GitHub Secrets (Settings → Secrets and variables → Actions 에서 등록):
+#   - WIF_PROVIDER       : 예) projects/936735263575/locations/global/
+#                              workloadIdentityPools/github-pool/providers/github-oidc
+#                          → terraform output `wif_provider_name` 값.
+#   - DEPLOYER_SA_EMAIL  : 예) deployer-sa@laborcase-prod.iam.gserviceaccount.com
+#                          → terraform output `deployer_sa_email` 값.
+#   - GCP_PROJECT        : laborcase-prod
+#
+# 트리거: `v*-api` suffix tag 만. main 브랜치 push 자체는 빌드/배포 안 함.
+#   - v0.1.0-api  : API 명시 배포
+#   - 둘 다 동시 배포 시: `git tag v0.1.0-api v0.1.0-fe && git push --tags`
+#
+# (이전 v* 만 매치 패턴은 v0.1.0-fe 같은 frontend tag 도 trigger 해 의도 외
+# 빌드/배포 시도 — 2026-04-29 v0.1.0-fe 사고 후 suffix-only 로 좁힘.)
+
+name: Deploy API
+
+on:
+  push:
+    tags:
+      - "v*-api"
+
+# 같은 tag 가 두 번 push 되거나 동시 실행이 일어나도 한 번에 하나만 진행.
+# 배포는 cancel-in-progress 가 위험하므로 false (앞 작업 끝까지 기다림).
+concurrency:
+  group: deploy-api-${{ github.ref }}
+  cancel-in-progress: false
+
+# WIF 가 OIDC token 을 발급하려면 id-token: write 가 반드시 필요.
+# contents: read 는 actions/checkout 이 sources 를 읽는 데 사용.
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    name: Build & deploy API
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      # ─────────────────────────────────────────────────────────────────
+      # 1) 소스 체크아웃
+      #    workflow 가 동작할 디렉토리에 repo 내용을 그대로 풀어놓는 단계.
+      # ─────────────────────────────────────────────────────────────────
+      - name: 소스 체크아웃
+        uses: actions/checkout@v4
+
+      # ─────────────────────────────────────────────────────────────────
+      # 2) GCP 키리스(keyless) 인증 — Workload Identity Federation
+      #    GitHub 가 발급한 OIDC token 을 GCP 가 검증한 뒤, deployer-sa 를
+      #    impersonate 한 access token 을 돌려준다. 이후 step 의 gcloud /
+      #    gsutil 호출이 자동으로 이 토큰을 사용한다.
+      # ─────────────────────────────────────────────────────────────────
+      - name: GCP keyless 인증 (WIF)
+        id: auth
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.DEPLOYER_SA_EMAIL }}
+
+      - name: gcloud CLI 설정
+        uses: google-github-actions/setup-gcloud@v2
+
+      # ─────────────────────────────────────────────────────────────────
+      # 3) Cloud Build — Spring Boot bootJar → docker build → push
+      #    api/cloudbuild.yaml 의 substitution 으로 commit-sha 전달.
+      #    이 step 이 끝나면 Artifact Registry 에 두 tag 가 push 된다:
+      #      asia-northeast3-docker.pkg.dev/<project>/laborcase-images/api:<sha>
+      #      asia-northeast3-docker.pkg.dev/<project>/laborcase-images/api:latest
+      # ─────────────────────────────────────────────────────────────────
+      - name: Cloud Build (이미지 빌드 + push)
+        run: |
+          gcloud builds submit \
+            --config api/cloudbuild.yaml \
+            --project "${{ secrets.GCP_PROJECT }}" \
+            --substitutions=COMMIT_SHA=${{ github.sha }} \
+            .
+
+      # ─────────────────────────────────────────────────────────────────
+      # 4) Cloud Run revision 갱신
+      #    --image 와 --update-env-vars 만 변경. service 의 다른 설정
+      #    (VPC, Cloud SQL, secrets, probe, scaling) 은 terraform 이
+      #    관리하므로 여기서 건드리지 않는다.
+      #    SENTRY_RELEASE 가 commit-sha 로 매번 갱신되어, prod error 가
+      #    어떤 commit 에서 발생했는지 Sentry 대시보드에서 즉시 보인다.
+      # ─────────────────────────────────────────────────────────────────
+      - name: Cloud Run 새 revision 배포
+        run: |
+          gcloud run deploy laborcase-api \
+            --region asia-northeast3 \
+            --project "${{ secrets.GCP_PROJECT }}" \
+            --image "asia-northeast3-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/laborcase-images/api:${{ github.sha }}" \
+            --update-env-vars "SENTRY_RELEASE=${{ github.sha }}"
+
+      # ─────────────────────────────────────────────────────────────────
+      # 5) 배포 결과 URL 출력
+      #    workflow 의 마지막 줄에 service URL 이 찍혀 사용자가 즉시
+      #    클릭 가능. 롤백이 필요하면 이 URL 그대로 두고
+      #    `gcloud run services update-traffic` 으로 이전 revision 으로
+      #    돌리면 된다 (docs/runbooks/deploy.md 참조).
+      # ─────────────────────────────────────────────────────────────────
+      - name: 배포 결과 확인
+        run: |
+          echo "=== API 배포 완료 ==="
+          gcloud run services describe laborcase-api \
+            --region asia-northeast3 \
+            --project "${{ secrets.GCP_PROJECT }}" \
+            --format="value(status.url)"

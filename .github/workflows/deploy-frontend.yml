@@ -1,0 +1,104 @@
+# =============================================================================
+# laborcase Frontend (Next.js standalone) 를 Cloud Run 에 배포.
+# =============================================================================
+#
+# deploy-api.yml 과 거의 동일한 흐름. 차이점:
+#   - frontend/cloudbuild.yaml 사용 (gradle 단계 없음, docker build 만).
+#   - NEXT_PUBLIC_API_BASE_URL 이 build-time inline 이므로 API service URL 을
+#     Cloud Build substitution 으로 주입해야 한다. URL 은 매 deploy 시점에
+#     gcloud 로 동적 조회 — secret 추가 없이 자동.
+#   - service 이름이 laborcase-frontend, image 가 .../frontend:<sha>.
+#
+# 필요한 GitHub Secrets (deploy-api.yml 과 공유):
+#   - WIF_PROVIDER
+#   - DEPLOYER_SA_EMAIL
+#   - GCP_PROJECT
+#
+# 트리거: `v*-fe` suffix tag 만. main 브랜치 push 만으로는 배포 안 됨.
+# 둘 다 동시 배포 시: `git tag v0.1.0-api v0.1.0-fe && git push --tags`.
+# (이전 v* 만 매치는 v0.1.0-api 도 trigger — 2026-04-29 사고 후 좁힘.)
+
+name: Deploy Frontend
+
+on:
+  push:
+    tags:
+      - "v*-fe"
+
+concurrency:
+  group: deploy-frontend-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    name: Build & deploy frontend
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: 소스 체크아웃
+        uses: actions/checkout@v4
+
+      - name: GCP keyless 인증 (WIF)
+        id: auth
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.DEPLOYER_SA_EMAIL }}
+
+      - name: gcloud CLI 설정
+        uses: google-github-actions/setup-gcloud@v2
+
+      # ─────────────────────────────────────────────────────────────────
+      # API service 의 현재 URL 을 동적 조회. Cloud Run URL 은 안정 (재
+      # 생성 안 하는 한 변하지 않음) 이지만, secret 추가 없이 단일 진실
+      # 원본 (terraform 이 만든 service) 에서 직접 가져오는 게 깔끔.
+      # ─────────────────────────────────────────────────────────────────
+      - name: API URL 조회
+        id: api_url
+        run: |
+          URL=$(gcloud run services describe laborcase-api \
+            --region asia-northeast3 \
+            --project "${{ secrets.GCP_PROJECT }}" \
+            --format='value(status.url)')
+          if [ -z "$URL" ]; then
+            echo "::error::laborcase-api service 가 없거나 URL 조회 실패"
+            exit 1
+          fi
+          echo "API URL: $URL"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      # ─────────────────────────────────────────────────────────────────
+      # Cloud Build — Next.js docker build + push.
+      # _NEXT_PUBLIC_API_BASE_URL 가 build-time inline 되므로 prod URL 이
+      # 이미지에 박힌다.
+      # ─────────────────────────────────────────────────────────────────
+      - name: Cloud Build (이미지 빌드 + push)
+        run: |
+          gcloud builds submit \
+            --config frontend/cloudbuild.yaml \
+            --project "${{ secrets.GCP_PROJECT }}" \
+            --substitutions=COMMIT_SHA=${{ github.sha }},_NEXT_PUBLIC_API_BASE_URL=${{ steps.api_url.outputs.url }} \
+            .
+
+      # ─────────────────────────────────────────────────────────────────
+      # Cloud Run revision 갱신.
+      # ─────────────────────────────────────────────────────────────────
+      - name: Cloud Run 새 revision 배포
+        run: |
+          gcloud run deploy laborcase-frontend \
+            --region asia-northeast3 \
+            --project "${{ secrets.GCP_PROJECT }}" \
+            --image "asia-northeast3-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/laborcase-images/frontend:${{ github.sha }}"
+
+      - name: 배포 결과 확인
+        run: |
+          echo "=== Frontend 배포 완료 ==="
+          gcloud run services describe laborcase-frontend \
+            --region asia-northeast3 \
+            --project "${{ secrets.GCP_PROJECT }}" \
+            --format="value(status.url)"

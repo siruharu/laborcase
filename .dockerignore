@@ -1,0 +1,12 @@
+.git/
+.gradle/
+**/.gradle/
+**/build/
+# But DO include the Spring Boot fat jar the Dockerfile COPYs.
+!api/build/libs/laborcase-api-*-SNAPSHOT.jar
+**/.terraform/
+**/.idea/
+**/.vscode/
+*.log
+infra/terraform/*.tfstate*
+infra/terraform/.terraform.lock.hcl
