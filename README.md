@@ -105,9 +105,9 @@ cd laborcase
 ## 배포 (prod = GCP Cloud Run)
 
 ```bash
-# 정상 케이스 (95%): tag 푸시 한 줄
-git tag v0.1.X
-git push origin v0.1.X
+# 정상 케이스 (95%): suffix tag 푸시
+git tag v0.1.X-api v0.1.X-fe
+git push origin v0.1.X-api v0.1.X-fe
 ```
 
 GitHub Actions 가 keyless WIF 인증으로 GCP 에 접근, Cloud Build 빌드 후 Cloud Run revision 갱신. 약 5-10분.

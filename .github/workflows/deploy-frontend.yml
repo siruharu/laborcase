@@ -14,7 +14,9 @@
 #   - DEPLOYER_SA_EMAIL
 #   - GCP_PROJECT
 #
-# 트리거: tag v*-fe 또는 v* (api 와 같은 tag 로 동시 배포 가능).
+# 트리거: `v*-fe` suffix tag 만. main 브랜치 push 만으로는 배포 안 됨.
+# 둘 다 동시 배포 시: `git tag v0.1.0-api v0.1.0-fe && git push --tags`.
+# (이전 v* 만 매치는 v0.1.0-api 도 trigger — 2026-04-29 사고 후 좁힘.)
 
 name: Deploy Frontend
 
@@ -22,7 +24,6 @@ on:
   push:
     tags:
       - "v*-fe"
-      - "v*"
 
 concurrency:
   group: deploy-frontend-${{ github.ref }}

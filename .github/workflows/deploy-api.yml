@@ -19,9 +19,12 @@
 #                          → terraform output `deployer_sa_email` 값.
 #   - GCP_PROJECT        : laborcase-prod
 #
-# 트리거: tag push 만. main 브랜치 push 자체는 빌드/배포 안 함 (안전장치).
-#   - v0.1.0-api  : API 만 명시 배포할 때 (frontend 와 분리)
-#   - v0.1.0      : 둘 다 같은 tag 로 같이 배포할 때 (deploy-frontend.yml 도 동시 매치)
+# 트리거: `v*-api` suffix tag 만. main 브랜치 push 자체는 빌드/배포 안 함.
+#   - v0.1.0-api  : API 명시 배포
+#   - 둘 다 동시 배포 시: `git tag v0.1.0-api v0.1.0-fe && git push --tags`
+#
+# (이전 v* 만 매치 패턴은 v0.1.0-fe 같은 frontend tag 도 trigger 해 의도 외
+# 빌드/배포 시도 — 2026-04-29 v0.1.0-fe 사고 후 suffix-only 로 좁힘.)
 
 name: Deploy API
 
@@ -29,7 +32,6 @@ on:
   push:
     tags:
       - "v*-api"
-      - "v*"
 
 # 같은 tag 가 두 번 push 되거나 동시 실행이 일어나도 한 번에 하나만 진행.
 # 배포는 cancel-in-progress 가 위험하므로 false (앞 작업 끝까지 기다림).

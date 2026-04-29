@@ -11,14 +11,16 @@
 ## 0. 초간단 — 정상 배포 시 (95% 케이스)
 
 ```bash
-# API + Frontend 동시 배포
-git tag v0.1.X
-git push origin v0.1.X
-
-# 또는 따로
+# 따로
 git tag v0.1.X-api && git push origin v0.1.X-api
 git tag v0.1.X-fe  && git push origin v0.1.X-fe
+
+# 또는 동시 (두 tag 한 번에 push)
+git tag v0.1.X-api v0.1.X-fe
+git push origin v0.1.X-api v0.1.X-fe
 ```
+
+> tag 명명: 반드시 **`-api` 또는 `-fe` suffix** 가 있어야 한다. `v0.1.X` 만은 어떤 workflow 도 trigger 하지 않는다 (2026-04-29 의도 외 trigger 사고 이후 정밀화).
 
 GitHub Actions 페이지 (`https://github.com/siruharu/laborcase/actions`) 에서 진행 추적. 마지막 step 의 service URL 이 응답 200 이면 성공.
 
