@@ -54,6 +54,12 @@ jobs:
         run: pip install pre-commit
 
       - name: Run pre-commit on all files
+        # frontend-lint hook 은 npm 의존 — local pre-commit 에선 동작하지만
+        # CI 환경엔 Node/npm 미설치라 exit 127. CI 의 frontend lint 검증은
+        # 별도 워크플로우 필요 시 추가 (현재는 deploy-frontend.yml 의
+        # `npm run build` 가 사실상 lint+typecheck 까지 검증).
+        env:
+          SKIP: frontend-lint
         run: pre-commit run --all-files --show-diff-on-failure
 
   secret-scan:
