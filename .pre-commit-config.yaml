@@ -14,6 +14,9 @@ repos:
       - id: check-case-conflict
       - id: mixed-line-ending
         args: [--fix=lf]
+        # .bat / .cmd 는 Windows 표준 CRLF — LF 강제 시 cmd.exe 가
+        # 깨진다. gradle wrapper 가 자동 생성하는 gradlew.bat 도 동일.
+        exclude: '\.(bat|cmd)$'
 
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.30.1
