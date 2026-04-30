@@ -64,6 +64,10 @@ jobs:
 
   secret-scan:
     runs-on: ubuntu-latest
+    # PR / dev push 에서만 의미 있음. main 직접 push 는 base==head 라
+    # TruffleHog 가 "BASE and HEAD commits are the same" 으로 fail.
+    # PR 단계의 scan 으로 main 진입 전 이미 검증 완료.
+    if: github.event_name == 'pull_request' || github.ref != 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
         with:
